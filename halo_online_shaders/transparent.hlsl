@@ -20,6 +20,8 @@ struct transparent_output
 	float4 Color		:COLOR0;
 };
 
+#ifdef VERTEX_SHADER
+
 transparent_output default_vs(vertex_type IN)
 {
     transparent_output OUT;
@@ -30,6 +32,8 @@ transparent_output default_vs(vertex_type IN)
 	
     return OUT;
 }
+
+#endif
 
 // pixel fragment entry points
 accum_pixel default_ps(transparent_output IN) : SV_Target

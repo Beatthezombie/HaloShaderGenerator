@@ -1,3 +1,5 @@
+#include "register_group.fx"
+
 #ifndef _CONTRAIL_PROFILE_FX_
 #define _CONTRAIL_PROFILE_FX_
 

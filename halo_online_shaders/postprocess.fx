@@ -25,6 +25,8 @@ struct screen_output
 #endif // POSTPROCESS_COLOR
 };
 
+#ifdef VERTEX_SHADER
+
 #ifndef POSTPROCESS_USE_CUSTOM_VERTEX_SHADER
 
 screen_output default_vs(vertex_type IN)
@@ -41,6 +43,6 @@ screen_output default_vs(vertex_type IN)
 
 #endif
 
-
+#endif
 
 #endif //ifndef _POSTPROCESS_FX_

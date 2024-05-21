@@ -17,7 +17,7 @@
 #define k_vs_implicit_hill_transform2 	CONSTANT_NAME(25)
 #define k_vs_implicit_hill_transform3 	CONSTANT_NAME(26)
 
-#deifne k_vs_implicit_hill_use_zscales 	BOOL_CONSTANT_NAME(7)
+#define k_vs_implicit_hill_use_zscales 	BOOL_CONSTANT_NAME(7)
 
 #elif DX_VERSION == 11
 

@@ -27,6 +27,8 @@ struct debug_output
     float4 Color		:COLOR0;
 };
 
+#ifdef VERTEX_SHADER
+
 debug_output default_vs(vertex_type IN)
 {
     debug_output OUT;
@@ -36,6 +38,8 @@ debug_output default_vs(vertex_type IN)
 	
     return OUT;
 }
+
+#endif
 
 // pixel fragment entry points
 

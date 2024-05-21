@@ -10,7 +10,7 @@
 #define DARK_COLOR_MULTIPLIER g_exposure.g
 #include "render_target.fx"
 
-//@generate sky
+//@generate world
 
 struct VS_INPUT
 {

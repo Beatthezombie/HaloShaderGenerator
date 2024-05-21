@@ -890,7 +890,7 @@ accum_pixel underwater_ps( s_underwater_interpolators INTERPOLATORS )
 	float2 texcoord_ss= INTERPOLATORS.position_ss.xy;
 	texcoord_ss= texcoord_ss / 2 + 0.5;
 	texcoord_ss.y= 1 - texcoord_ss.y;
-	texcoord_ss= k_water_player_view_constant.xy + texcoord_ss*k_water_player_view_constant.zw;
+	texcoord_ss= k_ps_water_player_view_constant.xy + texcoord_ss*k_ps_water_player_view_constant.zw;
 #endif
 
 	// get pixel position in world space
@@ -904,7 +904,7 @@ accum_pixel underwater_ps( s_underwater_interpolators INTERPOLATORS )
 #endif
 	
 	float4 pixel_position= float4(INTERPOLATORS.position_ss.xy, pixel_depth, 1.0f);		
-	pixel_position= mul(pixel_position, k_water_view_xform_inverse);
+	pixel_position= mul(pixel_position, k_ps_water_view_xform_inverse);
 	pixel_position.xyz/= pixel_position.w;
 	distance= length(k_ps_camera_position - pixel_position.xyz);	
 

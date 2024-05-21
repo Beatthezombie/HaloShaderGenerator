@@ -13,7 +13,7 @@
 
 #include "clip_plane.fx"
 
-//@generate implicit_vertex
+//@generate implicit
 
 struct implicit_output
 {

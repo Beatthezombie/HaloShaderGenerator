@@ -21,6 +21,7 @@ extern float4 g_hidden_from_compiler;
 #endif
 
 #include "light_volume_profile.fx"
+#include "light_volume_property.fx"
 #include "light_volume_state.fx"
 
 #if DX_VERSION == 9

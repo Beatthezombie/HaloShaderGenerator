@@ -1,3 +1,5 @@
+#include "register_group.fx"
+
 struct s_particle_state
 {
 	float3	m_position;

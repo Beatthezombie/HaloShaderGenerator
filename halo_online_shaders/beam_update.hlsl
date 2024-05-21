@@ -85,12 +85,21 @@ s_profile_out beam_main( s_profile_in vIN )
 // #else
 
 #if DX_VERSION == 9
+
+#ifndef PC_CPU
+float4 default_vs(vertex_type vIN) : SV_Position
+#else
 void default_vs( vertex_type vIN )
+#endif
 {
 //	asm {
 //		config VsExportMode=multipass   // export only shader
 //	};
+#ifndef PC_CPU 
+	return float4(1,2,3,4);
+#else
 	beam_main(vIN);
+#endif
 }
 #elif DX_VERSION == 11
 [numthreads(CS_BEAM_UPDATE_THREADS,1,1)]

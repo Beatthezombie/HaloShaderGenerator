@@ -108,7 +108,7 @@ float4 default_ps(screen_output IN) : SV_Target
 	float stencil =  raw_stencil / 255.0f;
 #endif   
    
-   result.g= step(64.0f / 255.0f, stencil);
+   result.g= step(64.0f / 255.0f, 0);
 
    return scale * result;
 }
