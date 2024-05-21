@@ -385,19 +385,14 @@ accum_pixel water_shading_reach(s_water_interpolators INTERPOLATORS)
 			environment_sample.rgb *= 256;		// static cubemap doesn't have exponential bias
 		}
 		else if (TEST_CATEGORY_OPTION(reflection, dynamic))
-		{
-			float4 reflection_0= texCUBE(dynamic_environment_map_0, reflect_dir);
+        {
+            const float exp_bias = 4.0f; // exponential bias of 2^2 for dynamic cubes
+			float4 reflection_0= texCUBE(dynamic_environment_map_0, reflect_dir) * exp_bias;
 //			float4 reflection_1= texCUBE(dynamic_environment_map_1, reflect_dir);
-		//	environment_sample= reflection_0;//* dynamic_environment_blend.w;				//	reflection_1 * (1.0f-dynamic_environment_blend.w);
-		//	environment_sample.rgb *= environment_sample.rgb * 4;
-		//	environment_sample.a /= 4;
-            environment_sample.rgb *= (reflection_0.rgb * 16.0f);
-            environment_sample = reflection_0.a * 16.0f;
+			environment_sample= reflection_0;//* dynamic_environment_blend.w;				//	reflection_1 * (1.0f-dynamic_environment_blend.w);
+			environment_sample.rgb *= environment_sample.rgb * 4;
+			environment_sample.a /= 4;
 			// dynamnic cubempa has 2 exponent bias. so we need to restore the original value for the original math
-			
-            //float4 reflection_0 = texCUBE(dynamic_environment_map_0, reflect_dir);
-            //float3 reflection = (reflection_0.rgb * reflection_0.a * 256)
-
         }
 
 		// evualuate HDR color with considering of shadow

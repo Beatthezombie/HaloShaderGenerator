@@ -195,7 +195,7 @@ void calc_material_two_lobe_phong_reach_ps(
 		float3 fragment_position_world= Camera_Position_PS - fragment_to_camera_world;
 		
 		// todo: switch to reach lights
-		calc_simple_lights_analytical(
+		calc_simple_lights_analytical_reach(
 			fragment_position_world,
 			surface_normal,
 	//		fragment_to_camera_world,
@@ -258,10 +258,20 @@ void calc_material_two_lobe_phong_reach_ps(
 	specular_color*= prt_ravi_diff.z;	
 
 	//output for environment stuff
-	envmap_area_specular_only= final_specular_tint_color.rgb + area_specular_radiance * prt_ravi_diff.z;
+	float raised_analytical_dot_product= saturate(dot(analytical_light_dir, surface_normal)*0.45f+0.55f);
+		
+	float fake_analytical_mask = 1.0f;
+	float fake_cloud_mask = 1.0f;
+	float3 fake_prebaked_analytical_light = raised_analytical_dot_product * analytical_light_intensity/* * fake_analytical_mask * fake_cloud_mask*/ * 0.25f * prt_ravi_diff.z;
+	envmap_area_specular_only= fake_prebaked_analytical_light * final_specular_tint_color.rgb + area_specular_radiance * prt_ravi_diff.z;
 	envmap_specular_reflectance_and_roughness.xyz=	material_parameters.b * specular_mask * material_parameters.r;
 	envmap_specular_reflectance_and_roughness.w= max(0.01f, 1.01 - material_parameters.a / 200.0f);		// convert specular power to roughness (cheap and bad approximation);
 
+	// from entry point
+	float analytical_light_dot_product_result=saturate(dot(analytical_light_dir,surface_normal));
+	diffuse_radiance += fake_analytical_mask * analytical_light_dot_product_result * 
+		analytical_light_intensity / 3.14159265358979323846 * fake_analytical_mask;
+	
 	//do diffuse
 	diffuse_radiance= prt_ravi_diff.x * diffuse_radiance;
 	diffuse_radiance= (simple_light_diffuse_light + diffuse_radiance) * diffuse_coefficient;

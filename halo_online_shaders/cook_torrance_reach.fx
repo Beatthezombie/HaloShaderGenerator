@@ -445,6 +445,7 @@ void calc_material_cook_torrance_base(
 				GET_MATERIAL_SPECULAR_POWER(material_type)(spatially_varying_material_parameters.a), // todo: power?
 				simple_light_diffuse_light,
 				simple_light_specular_light);
+			simple_light_specular_light*= final_specular_tint_color;
 		}
 		else
 		{
@@ -477,7 +478,7 @@ void calc_material_cook_torrance_base(
 				sh_312,
 				sh_457,
 				sh_8866,	//NEW_LIGHTMAP: changing to linear
-				spatially_varying_material_parameters.a,
+				roughness,
 				r_dot_l,
 				1,
 				specular_part,
@@ -494,7 +495,7 @@ void calc_material_cook_torrance_base(
 		//		view_normal,
 		//		sh_0,
 		//		sh_312,
-		//		spatially_varying_material_parameters.a,
+		//		roughness,
 		//		r_dot_l,
 		//		1,
 		//		specular_part,
@@ -513,9 +514,15 @@ void calc_material_cook_torrance_base(
 		//	sh_glossy
 		//);
 		
-		float3 fake_prebaked_analytical_light = spec_tint; // (input)envmap_area_specular_only * final_specular_tint_color.rgb
+		//float3 fake_prebaked_analytical_light = spec_tint; // (input)envmap_area_specular_only * final_specular_tint_color.rgb
+
+		float raised_analytical_dot_product= saturate(dot(view_light_dir, view_normal)*0.45f+0.55f);
+		
+		float fake_analytical_mask = 1.0f;
+		float fake_cloud_mask = 1.0f;
+		float3 fake_prebaked_analytical_light = raised_analytical_dot_product * light_color/* * fake_analytical_mask * fake_cloud_mask*/ * 0.25f * prt_ravi_diff.z;
 		envmap_specular_reflectance_and_roughness.w= spatially_varying_material_parameters.a;
-		envmap_area_specular_only= fake_prebaked_analytical_light * sh_glossy * prt_ravi_diff.z; // todo
+		envmap_area_specular_only= fake_prebaked_analytical_light * final_specular_tint_color.rgb + final_specular_tint_color.rgb * sh_glossy * prt_ravi_diff.z; // todo
 				
 		//scaling and masking
 		
@@ -531,6 +538,11 @@ void calc_material_cook_torrance_base(
 			specular_mask * 
 			spatially_varying_material_parameters.r;		// ###ctchou $TODO this ain't right
 		
+		// from entry point
+		float analytical_light_dot_product_result=saturate(dot(view_light_dir,view_normal));
+		diffuse_radiance += fake_analytical_mask * analytical_light_dot_product_result *
+			light_color / 3.14159265358979323846 * fake_analytical_mask;
+
 		diffuse_radiance= diffuse_radiance * prt_ravi_diff.x;
 		diffuse_radiance= (simple_light_diffuse_light + diffuse_radiance) * diffuse_coefficient;
 		specular_color*= prt_ravi_diff.z;		

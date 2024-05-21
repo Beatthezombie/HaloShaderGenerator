@@ -363,9 +363,14 @@ float3 calc_environment_map_dynamic_reach_ps(
 	float base_lod= 6.0f * sqrt(max(grad_x, grad_y)) - 0.6f;
 	float lod= max(0.0f, specular_reflectance_and_roughness.w * env_roughness_scale * 4);
 	
-	reflection_0= sampleCUBElod(dynamic_environment_map_0, reflect_dir, lod);
+	const float exp_bias = 4.0f; // exponential bias of 2^2 for dynamic cubes
+	reflection_0= sampleCUBElod(dynamic_environment_map_0, reflect_dir, lod) * exp_bias;
+	reflection_1= sampleCUBElod(dynamic_environment_map_1, reflect_dir, lod) * exp_bias;
 
-	float3 reflection=  (reflection_0.rgb*reflection_0.rgb * reflection_0.a * 64.0f);
+	//float3 reflection=  (reflection_0.rgb*reflection_0.rgb * reflection_0.a * 64.0f);
+
+	float3 reflection=  (reflection_0.rgb*reflection_0.rgb * reflection_0.a) * dynamic_environment_blend.w +
+						(reflection_1.rgb*reflection_1.rgb * reflection_1.a) * (1.0f-dynamic_environment_blend.w);
 
 #else	// xenon
 	float grad_x= 0.0f;
@@ -375,23 +380,23 @@ float3 calc_environment_map_dynamic_reach_ps(
 	float lod= max(base_lod, offset_env_reflection_lod(specular_reflectance_and_roughness.w));
 
 	reflection_0= sampleCUBElod(dynamic_environment_map_0, reflect_dir, lod + dynamic_environment_blend.x);
-#ifndef xenon
-	// environment maps on xenon have an exponent adjustment of +2
-	reflection_0 *= 4;
-#endif
+	#ifndef xenon
+		// environment maps on xenon have an exponent adjustment of +2
+		reflection_0 *= 4;
+	#endif // xenon
 
-#ifdef must_be_environment
-	float3 reflection=  (reflection_0.rgb*reflection_0.rgb * reflection_0.a);
-#else // !environment
-    reflection_1= sampleCUBElod(dynamic_environment_map_1, reflect_dir, lod + dynamic_environment_blend.y);
-#ifndef xenon
-	// environment maps on xenon have an exponent adjustment of +2
-	reflection_1 *= 4;
-#endif
-
-	float3 reflection=  (reflection_0.rgb*reflection_0.rgb * reflection_0.a) * dynamic_environment_blend.w +
-						(reflection_1.rgb*reflection_1.rgb * reflection_1.a) * (1.0f-dynamic_environment_blend.w);
-#endif // !environment
+	#ifdef must_be_environment
+		float3 reflection=  (reflection_0.rgb*reflection_0.rgb * reflection_0.a);
+	#else // !environment
+	    reflection_1= sampleCUBElod(dynamic_environment_map_1, reflect_dir, lod + dynamic_environment_blend.y);
+		#ifndef xenon
+			// environment maps on xenon have an exponent adjustment of +2
+			reflection_1 *= 4;
+		#endif
+	
+		float3 reflection=  (reflection_0.rgb*reflection_0.rgb * reflection_0.a) * dynamic_environment_blend.w +
+							(reflection_1.rgb*reflection_1.rgb * reflection_1.a) * (1.0f-dynamic_environment_blend.w);
+	#endif // !environment
 #endif
 
 	ssr_color.rgb = env_tint_color * specular_reflectance_and_roughness.xyz;
