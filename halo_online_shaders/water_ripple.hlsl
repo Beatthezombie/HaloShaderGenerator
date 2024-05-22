@@ -7,10 +7,11 @@ Copyright (c) Microsoft Corporation, 2005. all rights reserved.
 //This comment causes the shader compiler to be invoked for certain vertex types and entry points
 //@generate s_ripple_vertex
 //@entry default
-//@entry active_camo
 //@entry albedo
 //@entry dynamic_light
 //@entry shadow_apply
+//@entry active_camo
+//@entry lightmap_debug_mode
 
 #if DX_VERSION == 11
 //@compute_shader
@@ -43,6 +44,8 @@ Copyright (c) Microsoft Corporation, 2005. all rights reserved.
 	#define ripple_slope_ps		dynamic_light_ps
 	#define underwater_vs			shadow_apply_vs
 	#define underwater_ps			shadow_apply_ps
+	#define underwater_new_vs       lightmap_debug_mode_vs
+	#define underwater_new_ps       lightmap_debug_mode_ps
 #endif
 
 //#ifndef pc /* implementation of xenon version */
@@ -758,6 +761,14 @@ s_underwater_interpolators underwater_vs(s_ripple_vertex_input _IN)
 }
 #endif //PC_CPU
 
+s_underwater_interpolators underwater_new_vs(s_underwater_interpolators _IN)
+{
+	s_underwater_interpolators _OUT;
+	_OUT.position = float4(_IN.position.xy, 0, 1);
+	_OUT.position_ss = float4(_IN.position_ss.xy, 0, 0);
+	return _OUT;
+}
+
 #endif //VERTEX_SHADER
 
 
@@ -920,6 +931,36 @@ accum_pixel underwater_ps( s_underwater_interpolators INTERPOLATORS )
 	output_color= lerp(k_ps_underwater_fog_color, pixel_color, transparence);	
 		
 	return convert_to_render_target(float4(output_color, 1.0f), true, true);
+}
+
+#define k_underwater_murkiness_multiplier 1.44269502;
+
+accum_pixel underwater_new_ps( s_underwater_interpolators INTERPOLATORS ) : COLOR
+{
+	float scene_depth = (k_ps_water_view_depth_constant.x / tex2D(tex_depth_buffer, INTERPOLATORS.position_ss.xy).r) + k_ps_water_view_depth_constant.y;
+    float3 scene_color = tex2D(tex_ldr_buffer, INTERPOLATORS.position_ss.xy).rgb;
+
+	float4 transform_tex = float4(INTERPOLATORS.position_ss.xy, 1.0f - scene_depth, 1.0f);
+    transform_tex.y = 1.0f - transform_tex.y;
+    transform_tex.xy -= 0.5f;
+    transform_tex.xy /= 0.5f;
+    
+    float4 water_view = mul(transform_tex, k_ps_water_view_xform_inverse);
+    
+    water_view.xyz = water_view.xyz / water_view.w - k_ps_camera_position.xyz;
+    float view_murkiness = rcp(rsqrt(dot(water_view.xyz, water_view.xyz))) * k_ps_underwater_murkiness;
+    view_murkiness *= k_underwater_murkiness_multiplier;
+    view_murkiness = saturate(1.0f / exp2(view_murkiness));
+    
+    view_murkiness = -view_murkiness + 1.0f;
+    view_murkiness = -view_murkiness + 1.0f;
+    view_murkiness *= 0.5f;
+    
+    float3 fog_color = lerp(k_ps_underwater_fog_color, scene_color, view_murkiness);
+    
+    fog_color = max(fog_color, 0);
+    
+    return convert_to_render_target(float4(fog_color, 1.0f), true, true);
 }
 
 #endif //PIXEL_SHADER
