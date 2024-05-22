@@ -37,5 +37,9 @@ accum_pixel default_ps(screen_output IN) : SV_Target
 	// cap transparency against the vertex color
 	emblem_pixel.a= min(emblem_pixel.a, IN.color.a);
 	
-	return convert_to_render_target(emblem_pixel, false, false);
+	return convert_to_render_target(emblem_pixel, false, false
+	#ifdef SSR_ENABLE
+	, 0
+    #endif
+    );
 }

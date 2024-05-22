@@ -48,6 +48,10 @@ accum_pixel default_ps(VS_OUTPUT input)
     float3 sun= pow(max(dot(p_lighting_constant_0.xyz, normalize(input.normal)), 0.0f), p_lighting_constant_0.w) * p_lighting_constant_1.rgb;
     out_color.rgb+= sun;
 
-	return convert_to_render_target(out_color, true, false);
+	return convert_to_render_target(out_color, true, false
+	#ifdef SSR_ENABLE
+	, 0
+    #endif
+    );
 		
 }

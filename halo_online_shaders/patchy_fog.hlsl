@@ -222,5 +222,9 @@ accum_pixel default_ps(s_vertex_out pixel_in, SCREEN_POSITION_INPUT(screen_posit
 
 	inscatter *= fog_fade;
 
-	return convert_to_render_target(float4(inscatter * g_exposure.r, extinction), false, true);
+	return convert_to_render_target(float4(inscatter * g_exposure.r, extinction), false, true
+	#ifdef SSR_ENABLE
+	, 0
+    #endif
+    );
 }

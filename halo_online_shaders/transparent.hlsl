@@ -38,5 +38,9 @@ transparent_output default_vs(vertex_type IN)
 // pixel fragment entry points
 accum_pixel default_ps(transparent_output IN) : SV_Target
 {
-	return convert_to_render_target(IN.Color * sample2D(basemap_sampler, IN.Texcoord), false, false);
+	return convert_to_render_target(IN.Color * sample2D(basemap_sampler, IN.Texcoord), false, false
+	#ifdef SSR_ENABLE
+	, 0
+    #endif
+    );
 }

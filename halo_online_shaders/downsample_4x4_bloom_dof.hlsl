@@ -43,5 +43,10 @@ accum_pixel default_ps(screen_output IN)
 	result.dark_color.rgb= color;
 	result.dark_color.a= 1.0f;
 
+    #ifdef SSR_ENABLE
+	result.ssr_color = 0.0f;
+	#endif
+
+
 	return result;
 }

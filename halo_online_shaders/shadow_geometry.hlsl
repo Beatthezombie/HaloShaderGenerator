@@ -37,7 +37,11 @@ void default_vs(
 #if DX_VERSION == 9
 accum_pixel default_ps(SCREEN_POSITION_INPUT(screen_position))
 {
-	return convert_to_render_target(shadow_color, false, false);
+	return convert_to_render_target(shadow_color, false, false
+	#ifdef SSR_ENABLE
+	, 0
+    #endif
+    );
 }
 #elif DX_VERSION == 11
 void default_ps(SCREEN_POSITION_INPUT(screen_position))

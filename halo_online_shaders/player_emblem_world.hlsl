@@ -50,5 +50,9 @@ accum_pixel default_ps(s_world_vertex IN) : SV_Target
 {
 	float4 emblem_pixel= generate_emblem_pixel(IN.texcoord);
 	
-	return convert_to_render_target(emblem_pixel, false, false);
+	return convert_to_render_target(emblem_pixel, false, false
+	#ifdef SSR_ENABLE
+	, 0
+    #endif
+    );
 }

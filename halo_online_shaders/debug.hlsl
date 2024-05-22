@@ -45,5 +45,9 @@ debug_output default_vs(vertex_type IN)
 
 accum_pixel default_ps(debug_output IN)
 {
-    return convert_to_render_target(IN.Color, false, false);
+    return convert_to_render_target(IN.Color, false, false
+    #ifdef SSR_ENABLE
+	, 0
+    #endif
+    );
 }

@@ -930,7 +930,11 @@ accum_pixel underwater_ps( s_underwater_interpolators INTERPOLATORS )
 	float transparence= 0.5f * saturate(1.0f - compute_fog_factor(k_ps_underwater_murkiness, distance));						
 	output_color= lerp(k_ps_underwater_fog_color, pixel_color, transparence);	
 		
-	return convert_to_render_target(float4(output_color, 1.0f), true, true);
+	return convert_to_render_target(float4(output_color, 1.0f), true, true
+	#ifdef SSR_ENABLE
+	, 0
+    #endif
+    );
 }
 
 #define k_underwater_murkiness_multiplier 1.44269502;
@@ -960,7 +964,11 @@ accum_pixel underwater_new_ps( s_underwater_interpolators INTERPOLATORS ) : COLO
     
     fog_color = max(fog_color, 0);
     
-    return convert_to_render_target(float4(fog_color, 1.0f), true, true);
+    return convert_to_render_target(float4(fog_color, 1.0f), true, true
+	#ifdef SSR_ENABLE
+	, 0
+    #endif
+    );
 }
 
 #endif //PIXEL_SHADER

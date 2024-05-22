@@ -51,5 +51,9 @@ accum_pixel default_ps(alpha_test_output IN) : SV_Target
 	
 	pixel.rgb= (pixel.rgb * IN.extinction + IN.inscatter) * g_exposure.rrr;
 	
-	return convert_to_render_target(pixel, false, false);
+	return convert_to_render_target(pixel, false, false
+	#ifdef SSR_ENABLE
+	, 0
+    #endif
+    );
 }

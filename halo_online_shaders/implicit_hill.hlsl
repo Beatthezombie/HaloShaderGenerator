@@ -76,5 +76,9 @@ implicit_output default_vs(vertex_type IN)
 // pixel fragment entry points
 accum_pixel default_ps(implicit_output IN) : SV_Target
 {
-	return convert_to_render_target(float4(1.0f, 1.0f, 1.0f, 0.0f), false, false);
+	return convert_to_render_target(float4(1.0f, 1.0f, 1.0f, 0.0f), false, false
+	#ifdef SSR_ENABLE
+	, 0
+    #endif
+    );
 }
