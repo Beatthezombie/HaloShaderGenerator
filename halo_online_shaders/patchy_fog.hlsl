@@ -213,6 +213,7 @@ accum_pixel default_ps(s_vertex_out pixel_in, SCREEN_POSITION_INPUT(screen_posit
 	float3 beta_p_theta= MIE_THETA_PREFIX_HGC.xyz * heyey_term_one_pt_five;
 	float3 inscatter= SUN_INTENSITY_OVER_TM * beta_p_theta * extinction;
 
+#ifdef APPLY_FIXES
 	// the fog have to be faded near opaque surfaces:
 	float fog_depth = pixel_in.texcoord.z;
 	float depth_diff = view_space_scene_depth.x - fog_depth;
@@ -221,6 +222,7 @@ accum_pixel default_ps(s_vertex_out pixel_in, SCREEN_POSITION_INPUT(screen_posit
 	float fog_fade = smoothstep(full_fade_edge, no_fade_edge, depth_diff);
 
 	inscatter *= fog_fade;
+#endif
 
 	return convert_to_render_target(float4(inscatter * g_exposure.r, extinction), false, true
 	#ifdef SSR_ENABLE

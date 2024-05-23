@@ -6,6 +6,6 @@
 #define BILINEAR_SHADOWS
 #endif // pc
 
-#define FASTER_SHADOWS
+//#define FASTER_SHADOWS
 
 #include "shadow_apply.hlsl"

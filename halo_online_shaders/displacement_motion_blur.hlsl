@@ -5,7 +5,7 @@
 #include "hlsl_vertex_types.fx"
 #include "utilities.fx"
 
-#define DISTORTION_MULTISAMPLED 1
+//#define DISTORTION_MULTISAMPLED 1
 #define LDR_ONLY 1
 
 #define LDR_ALPHA_ADJUST g_exposure.w
@@ -113,17 +113,17 @@ accum_pixel default_ps(displacement_output IN, SCREEN_POSITION_INPUT(screen_coor
 	float4 accum_color= 0;
 	
 	float combined_weight= center_color.a * center_falloff_scale_factor;
-	if (combined_weight > 0.01)
+	for (int i = 0; i < num_taps; ++ i)
 	{
-		for (int i = 0; i < num_taps; ++ i)
-		{
-			current_texcoords+= uv_delta;
-			float4 ldr_value= sample2Dlod(ldr_buffer, current_texcoords, 0);
-			ldr_value.a= 1-ldr_value.a;
-			accum_color.rgb+= ldr_value.rgb * ldr_value.a;
-			accum_color.a+= ldr_value.a;
-		}
+		current_texcoords+= uv_delta;
+		float4 ldr_value= sample2D(ldr_buffer, current_texcoords);
+		ldr_value.a= 1-ldr_value.a;
+		accum_color.rgb+= ldr_value.rgb * ldr_value.a;
+		accum_color.a+= ldr_value.a;
 	}
+
+	center_falloff_scale_factor = center_color.a * -center_falloff_scale_factor + 0.01;
+	accum_color = center_falloff_scale_factor < 0.0f ? accum_color : 0.0f;
 	
 #if DX_VERSION == 11
 	if (accum_color.a > 0)

@@ -2,7 +2,7 @@
 
 //@generate tiny_position_only
 
-#define FASTER_SHADOWS
+//#define FASTER_SHADOWS
 
 #define SAMPLE_PERCENTAGE_CLOSER sample_percentage_closer_PCF_2x2_block
 float sample_percentage_closer_PCF_2x2_block(float3 fragment_shadow_position, float depth_bias);

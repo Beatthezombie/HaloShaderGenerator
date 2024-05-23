@@ -56,9 +56,9 @@ accum_pixel default_ps(displacement_output IN, SCREEN_POSITION_INPUT(screen_coor
 	static float max_displacement= 1.0f;	// if used, keep in sync with particle_render.hlsl
 #ifdef DISTORTION_MULTISAMPLED
 	// Displacement is accumulated in pixel unit on 1/4-size buffer, applied on full-size buffer.
-	float2 displacement= 0.5f * 2.0f * max_displacement * screen_constants.zw * (sample2D(displacement_sampler, IN.Texcoord).xy - distortion_offset);		// screen_constants.zw is distortion scale in x and y directions
+	float2 displacement= 0.5f * 2.0f * max_displacement * (screen_constants.zw + screen_constants.zw) * (sample2D(displacement_sampler, IN.Texcoord).xy - distortion_offset);		// screen_constants.zw is distortion scale in x and y directions
 #else
-	float2 displacement= 2.0f * max_displacement * screen_constants.zw * (sample2D(displacement_sampler, IN.Texcoord).xy - distortion_offset);		// screen_constants.zw is distortion scale in x and y directions
+	float2 displacement= 2.0f * max_displacement * (screen_constants.zw + screen_constants.zw) * (sample2D(displacement_sampler, IN.Texcoord).xy - distortion_offset);		// screen_constants.zw is distortion scale in x and y directions
 #endif
 	float change= dot(displacement, displacement);
 	clip(change> 0.0f ? 1.0f : -1.0f);	// save the texture fetches and the frame buffer write

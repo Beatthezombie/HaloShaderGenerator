@@ -11,7 +11,7 @@ LOCAL_SAMPLER_2D(source_sampler, 0);
 float4 default_ps(screen_output IN, SCREEN_POSITION_INPUT(vpos)) : SV_Target
 {
 #ifdef pc
- 	return sample2D(source_sampler, IN.texcoord * scale.xy);
+ 	return sample2D(source_sampler, IN.texcoord) * scale.x + scale.y;
  #else
 	// wrap at 8x8
 	vpos= vpos - 8.0 * floor(vpos / 8.0);

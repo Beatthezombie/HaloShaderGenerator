@@ -48,7 +48,7 @@ s_screen_output default_vs(vertex_type IN)
 
 accum_pixel default_ps(s_world_vertex IN) : SV_Target
 {
-	float4 emblem_pixel= generate_emblem_pixel(IN.texcoord);
+	float4 emblem_pixel= sample2D(tex0_sampler, IN.texcoord);
 	
 	return convert_to_render_target(emblem_pixel, false, false
 	#ifdef SSR_ENABLE

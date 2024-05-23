@@ -32,7 +32,7 @@ accum_pixel default_ps(screen_output IN) : SV_Target
 		float4 color		:TEXCOORD1;
 	};
 	*/
-	float4 emblem_pixel= generate_emblem_pixel(IN.texcoord);
+	float4 emblem_pixel= sample2D(tex0_sampler, IN.texcoord);
 	
 	// cap transparency against the vertex color
 	emblem_pixel.a= min(emblem_pixel.a, IN.color.a);
