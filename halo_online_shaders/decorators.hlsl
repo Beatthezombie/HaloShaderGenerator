@@ -103,7 +103,11 @@ accum_pixel default_ps(
 	alpha *= selection_color.w;
 	color.rgb= lerp(color.rgb, selection_color.rgb, alpha);
 	
-	return convert_to_render_target(color, true, false);
+	return convert_to_render_target(color, true, false
+	#ifdef SSR_ENABLE
+	, 0
+    #endif
+    );
 }
 	
 
