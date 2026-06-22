@@ -11,6 +11,37 @@
 
 LOCAL_SAMPLER_2D(dark_source_sampler, 0);
 
+#ifdef pc
+float xenon_gamma_adjust(float x)
+{
+	float gamma;
+	if (x < (64.0f / 1023.0f))
+	{
+		gamma = x * (1023.0f / 255.0f);
+	} else
+	if (x < (128.0f / 1023.0f))
+	{
+		gamma = (x * (341.0f / 170.0f)) + (32.0f / 255.0f);
+	} else
+	if (x < (256.0f / 1023.0f))
+	{
+		gamma = (x * (341.0f / 340.0f)) + (64.0f / 255.0f);
+	} else
+	{
+		gamma = (x * (341.0f / 680.0f)) + (128.0f / 255.0f);
+	}
+	return gamma*gamma;
+}
+
+float3 xenon_gamma_adjust(float3 rgb)
+{
+	return float3(
+		xenon_gamma_adjust(rgb.r),
+		xenon_gamma_adjust(rgb.g),
+		xenon_gamma_adjust(rgb.b));
+}
+#endif
+
 float4 default_ps(screen_output IN) : SV_Target
 {
 #ifdef pc
@@ -27,7 +58,7 @@ float4 default_ps(screen_output IN) : SV_Target
 	color += sample.rgb * sample.rgb;
 	sample= tex2D_offset(dark_source_sampler, IN.texcoord, +1, +1);
 	color += sample.rgb * sample.rgb;
-	color= color * DARK_COLOR_MULTIPLIER / 4.0f;
+	color = xenon_gamma_adjust(color / 4.0f) * DARK_COLOR_MULTIPLIER;
 
 	// calculate 'intensity'		(max or dot product?)
 	float intensity= dot(color.rgb, intensity_vector.rgb);					// max(max(color.r, color.g), color.b);
