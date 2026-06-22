@@ -11,9 +11,9 @@ LOCAL_SAMPLER_2D(gamma_LUT, 1);
 
 float3 sample_gamma(float3 colour)
 {
-    return float3(	sample2D(gamma_LUT, float2(saturate(colour.r) * (255.0f / 256.0f) + 0.001953125f, 0.5f)).r,
-					sample2D(gamma_LUT, float2(saturate(colour.g) * (255.0f / 256.0f) + 0.001953125f, 0.5f)).r,
-					sample2D(gamma_LUT, float2(saturate(colour.b) * (255.0f / 256.0f) + 0.001953125f, 0.5f)).r );
+    return float3(	sample2D(gamma_LUT, float2(saturate(colour.r), 0.5f)).r,
+					sample2D(gamma_LUT, float2(saturate(colour.g), 0.5f)).r,
+					sample2D(gamma_LUT, float2(saturate(colour.b), 0.5f)).r );
 }
 
 float4 default_ps(screen_output IN, SCREEN_POSITION_INPUT(vpos)) : SV_Target
