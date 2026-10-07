@@ -29,6 +29,10 @@ float offset_env_reflection_lod(float base_roughness)
     return (base_roughness + (env_roughness_offset - 0.5) * 2) * 4;
 }
 
+#if defined(BUILD_MS30)
+samplerCUBE environment_map : register(s1);		// test
+#endif
+
 #if ENVMAP_TYPE(envmap_type) == ENVMAP_TYPE_none
 float3 calc_environment_map_none_ps(
 	in float3 view_dir,
@@ -44,7 +48,7 @@ float3 calc_environment_map_none_ps(
 #endif // ENVMAP_TYPE_none
 
 #if ENVMAP_TYPE(envmap_type) == ENVMAP_TYPE_per_pixel
-#if DX_VERSION == 9
+#if DX_VERSION == 9 && !defined(BUILD_MS30)
 samplerCUBE environment_map : register(s1);		// test
 #elif DX_VERSION == 11
 PARAM_SAMPLER_CUBE(environment_map);
@@ -74,7 +78,7 @@ float3 calc_environment_map_per_pixel_ps(
 #endif // ENVMAP_TYPE_per_pixel
 
 #if ENVMAP_TYPE(envmap_type) == ENVMAP_TYPE_per_pixel_mip
-#if DX_VERSION == 9
+#if DX_VERSION == 9 && !defined(BUILD_MS30)
 samplerCUBE environment_map : register(s1);		// test
 #elif DX_VERSION == 11
 PARAM_SAMPLER_CUBE(environment_map);
@@ -277,8 +281,11 @@ float3 calc_environment_map_from_flat_texture_as_cubemap_ps(
 #endif // ENVMAP_TYPE_from_flat_texture
 
 #if ENVMAP_TYPE(envmap_type) == ENVMAP_TYPE_custom_map
+
+#if !defined(BUILD_MS30)
 //PARAM_SAMPLER_CUBE(environment_map);
 samplerCUBE environment_map : register(s1); // test
+#endif
 
 float calc_cubemap_lod(in float3 reflect_dir, in float roughness)
 {

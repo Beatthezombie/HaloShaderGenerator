@@ -62,14 +62,22 @@ float4 calc_warp_none(in float4 original_texcoord)
 
 float4 calc_warp_pixel_space(in float4 original_texcoord)
 {
+	#if defined(BUILD_MS30)
+	float2 warp=	tex2D(warp_map,	transform_texcoord(original_texcoord.zw, warp_map_xform)).xy;
+	#else
 	float2 warp=	bump_sample_unnormalized(warp_map,	transform_texcoord(original_texcoord.zw, warp_map_xform)).xy;
+	#endif
 	original_texcoord.zw += warp * warp_amount;
 	return original_texcoord;
 }
 
 float4 calc_warp_screen_space(in float4 original_texcoord)
 {
+	#if defined(BUILD_MS30)
+	float2 warp=	tex2D(warp_map,	transform_texcoord(original_texcoord.xy, warp_map_xform)).xy;
+	#else
 	float2 warp=	bump_sample_unnormalized(warp_map,	transform_texcoord(original_texcoord.xy, warp_map_xform)).xy;
+	#endif
 	warp = warp.xy * warp_amount;
 	original_texcoord.xy += warp;
 	

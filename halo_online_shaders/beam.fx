@@ -358,6 +358,7 @@ float4 sample_diffuse(float2 texcoord, float palette_v, float depth_alpha)
 		return float4(sample2D(palette, float2(index, palette_v)).xyz, alpha);
 	}
 
+#if !defined(BUILD_MS30)
 	IF_CATEGORY_OPTION(albedo, palettized_plasma)
 	{
 		float noise_a=	sample2D(base_map,	transform_texcoord(texcoord, base_map_xform)).r;
@@ -391,6 +392,7 @@ float4 sample_diffuse(float2 texcoord, float palette_v, float depth_alpha)
 
 		return float4(palette_value.rgb, alpha);
 	}
+#endif
 }
 
 //float compute_depth_fade(float2 screen_coords, float depth, float range)
@@ -440,6 +442,10 @@ s_beam_render_pixel_out default_ps(s_beam_interpolators INTERPOLATORS)
 		blended.xyz+= IN.m_color_add;
 	}
 
-	return CONVERT_TO_RENDER_TARGET_FOR_BLEND(blended, false, false, 0.0f);
+	return CONVERT_TO_RENDER_TARGET_FOR_BLEND(blended, false, false
+#ifdef SSR_ENABLE
+	, 0.0f
+#endif
+	);
 }
 #endif	//#ifdef PIXEL_SHADER

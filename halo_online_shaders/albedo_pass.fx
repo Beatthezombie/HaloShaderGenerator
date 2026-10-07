@@ -18,7 +18,11 @@ struct albedo_pixel
 
 float3 d3dSRGBGamma(float3 Clinear)
 {
+#if defined(BUILD_MS30) 
+	return Clinear;
+#else
 	return (Clinear <= .0031308f) ? (12.92f * Clinear) : (1.055f * pow(Clinear, 1.f/2.4f) ) - 0.055f;
+#endif
 }
 
 #endif

@@ -326,6 +326,7 @@ namespace HaloShaderGenerator
             switch (shaderType)
             {
                 case ShaderType.Shader:         return new ShaderUnitTest(ShaderReferencePath);
+                case ShaderType.Custom:         return new CustomUnitTest(ShaderReferencePath);
                 case ShaderType.Beam:           return new BeamUnitTest(ShaderReferencePath);
                 case ShaderType.Contrail:       return new ContrailUnitTest(ShaderReferencePath);
                 case ShaderType.Decal:          return new DecalUnitTest(ShaderReferencePath);
