@@ -10,6 +10,7 @@ namespace HaloShaderGenerator.Globals
     {
         Default,
         Albedo,
+        Albedo_Low,
         Static_Default,
         Static_Per_Pixel,
         Static_Per_Vertex,
@@ -17,6 +18,9 @@ namespace HaloShaderGenerator.Globals
         Static_Prt_Ambient,
         Static_Prt_Linear,
         Static_Prt_Quadratic,
+        Static_Per_Pixel_Low,
+        Static_Per_Vertex_Low,
+        Static_Sh_Low,
         Dynamic_Light,
         Shadow_Generate,
         Shadow_Apply,

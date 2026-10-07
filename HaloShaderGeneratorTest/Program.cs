@@ -15,20 +15,20 @@ namespace HaloShaderGenerator
         static readonly ShaderSubtype TestStageType = ShaderSubtype.Pixel; //shared_vertex, shared_pixel, vertex or pixel
 
         static readonly bool ExplicitTest = false;
-        static readonly string ExplicitReferencePath = @"D:\REPOS\TagTool\TagTool\bin\x64\Debug\HaloOnline106708\explicit";
+        static readonly string ExplicitReferencePath = @"D:\REPOS\Epsilon\TagTool\TagTool\bin\x64\Debug\HaloOnline700123\explicit";
         static readonly bool ExplicitTestSingle = true;
         static public readonly ExplicitShader ExplicitShader = ExplicitShader.pixel_copy;
 
         static readonly bool ChudTest = false;
-        static readonly string ChudReferencePath = @"D:\REPOS\TagTool\TagTool\bin\x64\Debug\HaloOnline106708\chud";
+        static readonly string ChudReferencePath = @"D:\REPOS\Epsilon\TagTool\TagTool\bin\x64\Debug\HaloOnline700123\chud";
         static readonly bool ChudTestSingle = true;
         static public readonly ChudShader ChudShader = ChudShader.chud_simple;
 
         static readonly bool TemplateTest = true;
-        static readonly string ShaderReferencePath = @"D:\REPOS\Epsilon\Epsilon\bin\x64\Debug\HaloOnline106708\shaders";
+        static readonly string ShaderReferencePath = @"D:\REPOS\Epsilon\TagTool\TagTool\bin\x64\Debug\HaloOnline700123\shaders";
         static readonly bool UnitTest = false;
         static readonly bool TestSpecificShader = true;
-        static readonly ShaderType TestShaderType = ShaderType.Water;
+        static readonly ShaderType TestShaderType = ShaderType.Zonly;
 
         static public readonly bool OutputAll = true;
 
@@ -336,6 +336,7 @@ namespace HaloShaderGenerator
                 case ShaderType.Water:          return new WaterUnitTest(ShaderReferencePath);
                 case ShaderType.Screen:         return new ScreenUnitTest(ShaderReferencePath);
                 case ShaderType.Foliage:        return new FoliageUnitTest(ShaderReferencePath);
+                case ShaderType.Zonly:          return new ZonlyUnitTest(ShaderReferencePath);
             }
 
             throw new Exception($"No unit test for \"shaderType\" found.");
@@ -358,7 +359,8 @@ namespace HaloShaderGenerator
                 case ShaderType.Foliage:        return FoliageMethodOverrides;
             }
 
-            throw new Exception($"No method overrides for \"shaderType\" found.");
+            //throw new Exception($"No method overrides for \"shaderType\" found.");
+            return new List<List<int>>();
         }
 
         static List<List<int>> GetOverrides(ShaderType shaderType)
@@ -378,7 +380,8 @@ namespace HaloShaderGenerator
                 case ShaderType.Foliage:        return FoliageOverrides;
             }
 
-            throw new Exception($"No overrides for \"shaderType\" found.");
+            //throw new Exception($"No overrides for \"shaderType\" found.");
+            return new List<List<int>>();
         }
 
         static void RunPixelUnitTest(GenericUnitTest unitTest, ShaderType shaderType)
@@ -559,7 +562,7 @@ namespace HaloShaderGenerator
                 case ShaderType.Screen:         return new Screen.ScreenGenerator(bMethods);
                 case ShaderType.Custom:         return new Custom.CustomGenerator(bMethods);
                 case ShaderType.Foliage:        return new Foliage.FoliageGenerator(bMethods);
-                case ShaderType.ZOnly:          return new ZOnly.ZOnlyGenerator(bMethods);
+                case ShaderType.Zonly:          return new ZOnly.ZOnlyGenerator(bMethods);
             }
 
             throw new Exception($"No generator for \"shaderType\" found.");
@@ -583,7 +586,7 @@ namespace HaloShaderGenerator
                 case ShaderType.Screen:         return new Screen.ScreenGenerator();
                 case ShaderType.Custom:         return new Custom.CustomGenerator();
                 case ShaderType.Foliage:        return new Foliage.FoliageGenerator();
-                case ShaderType.ZOnly:          return new ZOnly.ZOnlyGenerator();
+                case ShaderType.Zonly:          return new ZOnly.ZOnlyGenerator();
             }
 
             throw new Exception($"No generator for \"shaderType\" found.");

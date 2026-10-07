@@ -120,6 +120,9 @@ namespace HaloShaderGenerator.TemplateGenerator
             macros.Add(ShaderGeneratorBase.CreateMacro("DX_VERSION", "9"));
             macros.Add(ShaderGeneratorBase.CreateMacro("disable_register_reorder", "1"));
 
+            // TODO: This should be a 'user' macro
+            macros.Add(ShaderGeneratorBase.CreateMacro("BUILD_MS30", "1"));
+
             if (SsrEnable(shaderType))
             {
                 switch (entryPoint)

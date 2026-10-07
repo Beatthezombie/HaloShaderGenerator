@@ -2,34 +2,25 @@
 using HaloShaderGenerator.Globals;
 using HaloShaderGenerator.Halogram;
 using System.Collections.Generic;
+using HaloShaderGenerator.TemplateGenerator;
 
 namespace HaloShaderGenerator
 {
     public class HalogramUnitTest : GenericUnitTest
     {
-        public HalogramUnitTest(string referencePath) : base(referencePath, new HalogramGenerator(), "halogram") { }
+        public HalogramUnitTest(string referencePath) : base(referencePath, new HalogramGenerator(), ShaderType.Halogram) { }
 
         public override string GeneratePixelShader(ShaderStage stage, List<int> shaderOptions)
         {
-            var albedo = (Albedo)shaderOptions[0];
-            var self_illumination = (Self_Illumination)shaderOptions[1];
-            var blend_mode = (Blend_Mode)shaderOptions[2];
-            var misc = (Misc)shaderOptions[3];
-            var warp = (Warp)shaderOptions[4];
-            var overlay = (Overlay)shaderOptions[5];
-            var edge_fade = (Edge_Fade)shaderOptions[6];
-            var distortion = (Shared.Distortion)shaderOptions[7];
-            var soft_fade = (Shared.Soft_Fade)shaderOptions[8];
-
-            var gen = new HalogramGenerator(albedo, self_illumination, blend_mode, misc, warp, overlay, edge_fade, distortion, soft_fade);
-            var bytecode = gen.GeneratePixelShader(stage).Bytecode;
+            var gen = new TemplateGenerator.TemplateGenerator();
+            var bytecode = gen.GeneratePixelShader(Type, stage, StaticOptionInfo.OptionIndicesToOptionInfo(Type, shaderOptions), false).Bytecode;
             return D3DCompiler.Disassemble(bytecode);
         }
 
         public override string GenerateSharedPixelShader(ShaderStage stage, int methodIndex, int optionIndex)
         {
-            var gen = new HalogramGenerator();
-            var bytecode = gen.GenerateSharedPixelShader(stage, methodIndex, optionIndex).Bytecode;
+            var gen = new TemplateGenerator.TemplateGenerator();
+            var bytecode = gen.GeneratePixelShader(Type, stage, new List<OptionInfo>() { StaticOptionInfo.GetOptionInfo(Type, methodIndex, optionIndex) }, false).Bytecode;
             return D3DCompiler.Disassemble(bytecode);
         }
 

@@ -2,31 +2,25 @@
 using HaloShaderGenerator.Globals;
 using HaloShaderGenerator.Decal;
 using System.Collections.Generic;
+using HaloShaderGenerator.TemplateGenerator;
 
 namespace HaloShaderGenerator
 {
     public class DecalUnitTest : GenericUnitTest
     {
-        public DecalUnitTest(string referencePath) : base(referencePath, new DecalGenerator(), "decal") { }
+        public DecalUnitTest(string referencePath) : base(referencePath, new DecalGenerator(), ShaderType.Decal) { }
 
         public override string GeneratePixelShader(ShaderStage stage, List<int> shaderOptions)
         {
-            var albedo = (Albedo)shaderOptions[0];
-            var blend_mode = (Blend_Mode)shaderOptions[1];
-            var render_pass = (Render_Pass)shaderOptions[2];
-            var specular = (Specular)shaderOptions[3];
-            var bump_mapping = (Bump_Mapping)shaderOptions[4];
-            var tinting = (Tinting)shaderOptions[5];
-
-            var gen = new DecalGenerator(albedo, blend_mode, render_pass, specular, bump_mapping, tinting);
-            var bytecode = gen.GeneratePixelShader(stage).Bytecode;
+            var gen = new TemplateGenerator.TemplateGenerator();
+            var bytecode = gen.GeneratePixelShader(Type, stage, StaticOptionInfo.OptionIndicesToOptionInfo(Type, shaderOptions), false).Bytecode;
             return D3DCompiler.Disassemble(bytecode);
         }
 
         public override string GenerateSharedPixelShader(ShaderStage stage, int methodIndex, int optionIndex)
         {
-            var gen = new DecalGenerator();
-            var bytecode = gen.GenerateSharedPixelShader(stage, methodIndex, optionIndex).Bytecode;
+            var gen = new TemplateGenerator.TemplateGenerator();
+            var bytecode = gen.GeneratePixelShader(Type, stage, new List<OptionInfo>() { StaticOptionInfo.GetOptionInfo(Type, methodIndex, optionIndex) }, false).Bytecode;
             return D3DCompiler.Disassemble(bytecode);
         }
 

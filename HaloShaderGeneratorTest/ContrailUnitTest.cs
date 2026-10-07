@@ -2,29 +2,25 @@
 using HaloShaderGenerator.Globals;
 using HaloShaderGenerator.Contrail;
 using System.Collections.Generic;
+using HaloShaderGenerator.TemplateGenerator;
 
 namespace HaloShaderGenerator
 {
     public class ContrailUnitTest : GenericUnitTest
     {
-        public ContrailUnitTest(string referencePath) : base(referencePath, new ContrailGenerator(), "contrail") { }
+        public ContrailUnitTest(string referencePath) : base(referencePath, new ContrailGenerator(), ShaderType.Contrail) { }
 
         public override string GeneratePixelShader(ShaderStage stage, List<int> shaderOptions)
         {
-            var albedo = (Albedo)shaderOptions[0];
-            var blend_mode = (Blend_Mode)shaderOptions[1];
-            var black_point = (Black_Point)shaderOptions[2];
-            var fog = (Fog)shaderOptions[3];
-
-            var gen = new ContrailGenerator(albedo, blend_mode, black_point, fog);
-            var bytecode = gen.GeneratePixelShader(stage).Bytecode;
+            var gen = new TemplateGenerator.TemplateGenerator();
+            var bytecode = gen.GeneratePixelShader(Type, stage, StaticOptionInfo.OptionIndicesToOptionInfo(Type, shaderOptions), false).Bytecode;
             return D3DCompiler.Disassemble(bytecode);
         }
 
         public override string GenerateSharedPixelShader(ShaderStage stage, int methodIndex, int optionIndex)
         {
-            var gen = new ContrailGenerator();
-            var bytecode = gen.GenerateSharedPixelShader(stage, methodIndex, optionIndex).Bytecode;
+            var gen = new TemplateGenerator.TemplateGenerator();
+            var bytecode = gen.GeneratePixelShader(Type, stage, new List<OptionInfo>() { StaticOptionInfo.GetOptionInfo(Type, methodIndex, optionIndex) }, false).Bytecode;
             return D3DCompiler.Disassemble(bytecode);
         }
 

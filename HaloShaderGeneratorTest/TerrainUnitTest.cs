@@ -2,31 +2,25 @@
 using HaloShaderGenerator.Globals;
 using HaloShaderGenerator.Terrain;
 using System.Collections.Generic;
+using HaloShaderGenerator.TemplateGenerator;
 
 namespace HaloShaderGenerator
 {
     public class TerrainUnitTest : GenericUnitTest
     {
-        public TerrainUnitTest(string referencePath) : base(referencePath, new TerrainGenerator(), "terrain") { }
+        public TerrainUnitTest(string referencePath) : base(referencePath, new TerrainGenerator(), ShaderType.Terrain) { }
 
         public override string GeneratePixelShader(ShaderStage stage, List<int> shaderOptions)
         {
-            var blend_type = (Blending)shaderOptions[0];
-            var env_map = (Environment_Mapping)shaderOptions[1];
-            var material_0 = (Material)shaderOptions[2];
-            var material_1 = (Material1)shaderOptions[3];
-            var material_2 = (Material2)shaderOptions[4];
-            var material_3 = (Material_No_Detail_Bump)shaderOptions[5];
-
-            var gen = new TerrainGenerator(blend_type, env_map, material_0, material_1, material_2, material_3);
-            var bytecode = gen.GeneratePixelShader(stage).Bytecode;
+            var gen = new TemplateGenerator.TemplateGenerator();
+            var bytecode = gen.GeneratePixelShader(Type, stage, StaticOptionInfo.OptionIndicesToOptionInfo(Type, shaderOptions), false).Bytecode;
             return D3DCompiler.Disassemble(bytecode);
         }
 
         public override string GenerateSharedPixelShader(ShaderStage stage, int methodIndex, int optionIndex)
         {
-            var gen = new TerrainGenerator();
-            var bytecode = gen.GenerateSharedPixelShader(stage, methodIndex, optionIndex).Bytecode;
+            var gen = new TemplateGenerator.TemplateGenerator();
+            var bytecode = gen.GeneratePixelShader(Type, stage, new List<OptionInfo>() { StaticOptionInfo.GetOptionInfo(Type, methodIndex, optionIndex) }, false).Bytecode;
             return D3DCompiler.Disassemble(bytecode);
         }
 

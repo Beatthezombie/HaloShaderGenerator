@@ -30,7 +30,7 @@ namespace HaloShaderGenerator.Globals
         Screen,
         Custom,
         Foliage,
-        ZOnly,
+        Zonly,
         Glass
     }
 

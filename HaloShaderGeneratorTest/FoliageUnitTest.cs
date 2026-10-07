@@ -2,27 +2,25 @@
 using HaloShaderGenerator.Globals;
 using HaloShaderGenerator.Foliage;
 using System.Collections.Generic;
+using HaloShaderGenerator.TemplateGenerator;
 
 namespace HaloShaderGenerator
 {
     public class FoliageUnitTest : GenericUnitTest
     {
-        public FoliageUnitTest(string referencePath) : base(referencePath, new FoliageGenerator(), "foliage") { }
+        public FoliageUnitTest(string referencePath) : base(referencePath, new FoliageGenerator(), ShaderType.Foliage) { }
 
         public override string GeneratePixelShader(ShaderStage stage, List<int> shaderOptions)
         {
-            var albedo = (Albedo)shaderOptions[0];
-            var alpha_test = (Alpha_Test)shaderOptions[1];
-            var material_model = (Material_Model)shaderOptions[2];
-            var gen = new FoliageGenerator(albedo, alpha_test, material_model);
-            var bytecode = gen.GeneratePixelShader(stage).Bytecode;
+            var gen = new TemplateGenerator.TemplateGenerator();
+            var bytecode = gen.GeneratePixelShader(Type, stage, StaticOptionInfo.OptionIndicesToOptionInfo(Type, shaderOptions), false).Bytecode;
             return D3DCompiler.Disassemble(bytecode);
         }
 
         public override string GenerateSharedPixelShader(ShaderStage stage, int methodIndex, int optionIndex)
         {
-            var gen = new FoliageGenerator();
-            var bytecode = gen.GenerateSharedPixelShader(stage, methodIndex, optionIndex).Bytecode;
+            var gen = new TemplateGenerator.TemplateGenerator();
+            var bytecode = gen.GeneratePixelShader(Type, stage, new List<OptionInfo>() { StaticOptionInfo.GetOptionInfo(Type, methodIndex, optionIndex) }, false).Bytecode;
             return D3DCompiler.Disassemble(bytecode);
         }
 

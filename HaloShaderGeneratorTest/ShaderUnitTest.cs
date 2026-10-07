@@ -7,36 +7,26 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using HaloShaderGenerator.Generator;
+using HaloShaderGenerator.TemplateGenerator;
+using System.Text.RegularExpressions;
 
 namespace HaloShaderGenerator
 {
     public class ShaderUnitTest : GenericUnitTest
     {
-        public ShaderUnitTest(string referencePath) : base(referencePath, new ShaderGenerator(), "shader") { }
+        public ShaderUnitTest(string referencePath) : base(referencePath, new ShaderGenerator(), ShaderType.Shader) { }
 
         public override string GeneratePixelShader(ShaderStage stage, List<int> shaderOptions)
         {
-            var albedo = (Albedo)shaderOptions[0];
-            var bump_mapping = (Bump_Mapping)shaderOptions[1];
-            var alpha_test = (Alpha_Test)shaderOptions[2];
-            var specular_mask = (Specular_Mask)shaderOptions[3];
-            var material_model = (Material_Model)shaderOptions[4];
-            var environment_mapping = (Environment_Mapping)shaderOptions[5];
-            var self_illumination = (Self_Illumination)shaderOptions[6];
-            var blend_mode = (Blend_Mode)shaderOptions[7];
-            var parallax = (Parallax)shaderOptions[8];
-            var misc = (Misc)shaderOptions[9];
-            var distortion = (Shared.Distortion)shaderOptions[10];
-            var soft_fade = (Shared.Soft_Fade)shaderOptions[11];
-            var gen = new ShaderGenerator(albedo, bump_mapping, alpha_test, specular_mask, material_model, environment_mapping, self_illumination, blend_mode, parallax, misc, distortion, soft_fade);
-            var result = gen.GeneratePixelShader(stage);
-            return D3DCompiler.Disassemble(result.Bytecode);
+            var gen = new TemplateGenerator.TemplateGenerator();
+            var bytecode = gen.GeneratePixelShader(Type, stage, StaticOptionInfo.OptionIndicesToOptionInfo(Type, shaderOptions), false).Bytecode;
+            return D3DCompiler.Disassemble(bytecode);
         }
 
         public override string GenerateSharedPixelShader(ShaderStage stage, int methodIndex, int optionIndex)
         {
-            var gen = new ShaderGenerator();
-            var bytecode = gen.GenerateSharedPixelShader(stage, methodIndex, optionIndex).Bytecode;
+            var gen = new TemplateGenerator.TemplateGenerator();
+            var bytecode = gen.GeneratePixelShader(Type, stage, new List<OptionInfo>() { StaticOptionInfo.GetOptionInfo(Type, methodIndex, optionIndex) }, false).Bytecode;
             return D3DCompiler.Disassemble(bytecode);
         }
 
@@ -80,13 +70,15 @@ namespace HaloShaderGenerator
         private static bool IgnoreD3DX = true;
         private static string ReferencePath;
         private IShaderGenerator ReferenceGenerator;
-        private static string ShaderType;
+        private static string ShaderTypeName;
+        internal static ShaderType Type;
 
-        public GenericUnitTest(string referencePath, IShaderGenerator referenceGenerator, string shaderType)
+        public GenericUnitTest(string referencePath, IShaderGenerator referenceGenerator, ShaderType shaderType)
         {
             ReferencePath = referencePath;
             ReferenceGenerator = referenceGenerator;
-            ShaderType = shaderType;
+            ShaderTypeName = Regex.Replace(shaderType.ToString(), @"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])", "_").ToLowerInvariant();
+            Type = shaderType;
         }
 
         public static string BuildShaderName(List<int> methods)
@@ -106,7 +98,7 @@ namespace HaloShaderGenerator
 
         public static List<List<int>> GetAllTestPixelShaders()
         {
-            var pixelShaderPath = Path.Combine(ReferencePath, $"{ShaderType}_templates");
+            var pixelShaderPath = Path.Combine(ReferencePath, $"{ShaderTypeName}_templates");
             List<string> availableShaders = Directory.GetDirectories(pixelShaderPath).ToList();
             List<List<int>> availableShaderMethods = new List<List<int>>();
             foreach (var shader in availableShaders)
@@ -123,7 +115,7 @@ namespace HaloShaderGenerator
 
         public static string GetTestSharedVertexShader(VertexType vertex, ShaderStage stage)
         {
-            var vertexShaderPath = Path.Combine(ReferencePath, $"{ShaderType}_shared_vertex_shaders");
+            var vertexShaderPath = Path.Combine(ReferencePath, $"{ShaderTypeName}_shared_vertex_shaders");
             vertexShaderPath = Path.Combine(vertexShaderPath, $"{vertex.ToString().ToLower()}");
             vertexShaderPath = Path.Combine(vertexShaderPath, $"{stage.ToString().ToLower()}.shared_vertex_shader");
             return vertexShaderPath;
@@ -131,7 +123,7 @@ namespace HaloShaderGenerator
 
         public static string GetTestSharedPixelShader(ShaderStage stage, int methodIndex = -1, int optionIndex = -1)
         {
-            var vertexShaderPath = Path.Combine(ReferencePath, $"{ShaderType}_shared_pixel_shaders");
+            var vertexShaderPath = Path.Combine(ReferencePath, $"{ShaderTypeName}_shared_pixel_shaders");
             var filename = $"{stage.ToString().ToLower()}";
             if(methodIndex != -1 && optionIndex != -1)
             {
@@ -674,7 +666,7 @@ namespace HaloShaderGenerator
             // if we've added new options, old shader lists won't have them. use this to generate
             List<int> generatorList = new List<int>();
 
-            for (int i = 0; i < ReferenceGenerator.GetMethodCount(); i++)
+            for (int i = 0; i < StaticOptionInfo.GetCategoryCount(Type); i++)
             {
                 if (i < testShader.Count)
                     generatorList.Add(testShader[i]);
@@ -707,7 +699,7 @@ namespace HaloShaderGenerator
                             continue;
                     }
 
-                    string filePath = Path.Combine(Path.Combine(ReferencePath, $"{ShaderType.ToLower()}_templates"), BuildShaderName(testShader));
+                    string filePath = Path.Combine(Path.Combine(ReferencePath, $"{ShaderTypeName.ToLower()}_templates"), BuildShaderName(testShader));
                     filePath = Path.Combine(filePath, BuildPixelShaderEntryPointName(stage));
                     var file = new FileInfo(filePath);
 

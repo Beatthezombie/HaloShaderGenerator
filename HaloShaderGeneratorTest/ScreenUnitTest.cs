@@ -2,30 +2,25 @@
 using HaloShaderGenerator.Globals;
 using HaloShaderGenerator.Screen;
 using System.Collections.Generic;
+using HaloShaderGenerator.TemplateGenerator;
 
 namespace HaloShaderGenerator
 {
     public class ScreenUnitTest : GenericUnitTest
     {
-        public ScreenUnitTest(string referencePath) : base(referencePath, new ScreenGenerator(), "screen") { }
+        public ScreenUnitTest(string referencePath) : base(referencePath, new ScreenGenerator(), ShaderType.Screen) { }
 
         public override string GeneratePixelShader(ShaderStage stage, List<int> shaderOptions)
         {
-            var warp = (Warp)shaderOptions[0];
-            var _base = (Base)shaderOptions[1];
-            var overlay_a = (Overlay_A)shaderOptions[2];
-            var overlay_b = (Overlay_B)shaderOptions[3];
-            var blend_type = (Blend_Mode)shaderOptions[4];
-
-            var gen = new ScreenGenerator(warp, _base, overlay_a, overlay_b, blend_type);
-            var bytecode = gen.GeneratePixelShader(stage).Bytecode;
+            var gen = new TemplateGenerator.TemplateGenerator();
+            var bytecode = gen.GeneratePixelShader(Type, stage, StaticOptionInfo.OptionIndicesToOptionInfo(Type, shaderOptions), false).Bytecode;
             return D3DCompiler.Disassemble(bytecode);
         }
 
         public override string GenerateSharedPixelShader(ShaderStage stage, int methodIndex, int optionIndex)
         {
-            var gen = new ScreenGenerator();
-            var bytecode = gen.GenerateSharedPixelShader(stage, methodIndex, optionIndex).Bytecode;
+            var gen = new TemplateGenerator.TemplateGenerator();
+            var bytecode = gen.GeneratePixelShader(Type, stage, new List<OptionInfo>() { StaticOptionInfo.GetOptionInfo(Type, methodIndex, optionIndex) }, false).Bytecode;
             return D3DCompiler.Disassemble(bytecode);
         }
 

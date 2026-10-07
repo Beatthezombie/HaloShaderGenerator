@@ -7,7 +7,7 @@ namespace HaloShaderGenerator
 {
     public class ExplicitUnitTest : GenericUnitTest
     {
-        public ExplicitUnitTest(string referencePath) : base(referencePath, null, "explicit") { }
+        public ExplicitUnitTest(string referencePath) : base(referencePath, null, ShaderType.Shader) { }
 
         public override string GeneratePixelShader(ShaderStage stage, List<int> shaderOptions)
         {

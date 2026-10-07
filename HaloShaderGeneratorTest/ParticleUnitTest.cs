@@ -2,35 +2,25 @@
 using HaloShaderGenerator.Globals;
 using HaloShaderGenerator.Particle;
 using System.Collections.Generic;
+using HaloShaderGenerator.TemplateGenerator;
 
 namespace HaloShaderGenerator
 {
     public class ParticleUnitTest : GenericUnitTest
     {
-        public ParticleUnitTest(string referencePath) : base(referencePath, new ParticleGenerator(), "particle") { }
+        public ParticleUnitTest(string referencePath) : base(referencePath, new ParticleGenerator(), ShaderType.Particle) { }
 
         public override string GeneratePixelShader(ShaderStage stage, List<int> shaderOptions)
         {
-            var albedo = (Albedo)shaderOptions[0];
-            var blend_mode = (Blend_Mode)shaderOptions[1];
-            var specialized_rendering = (Specialized_Rendering)shaderOptions[2];
-            var lighting = (Lighting)shaderOptions[3];
-            var render_targets = (Render_Targets)shaderOptions[4];
-            var depth_fade = (Depth_Fade)shaderOptions[5];
-            var black_point = (Black_Point)shaderOptions[6];
-            var fog = (Fog)shaderOptions[7];
-            var frame_blend = (Frame_Blend)shaderOptions[8];
-            var self_illumination = (Self_Illumination)shaderOptions[9];
-
-            var gen = new ParticleGenerator(albedo, blend_mode, specialized_rendering, lighting, render_targets, depth_fade, black_point, fog, frame_blend, self_illumination);
-            var bytecode = gen.GeneratePixelShader(stage).Bytecode;
+            var gen = new TemplateGenerator.TemplateGenerator();
+            var bytecode = gen.GeneratePixelShader(Type, stage, StaticOptionInfo.OptionIndicesToOptionInfo(Type, shaderOptions), false).Bytecode;
             return D3DCompiler.Disassemble(bytecode);
         }
 
         public override string GenerateSharedPixelShader(ShaderStage stage, int methodIndex, int optionIndex)
         {
-            var gen = new ParticleGenerator();
-            var bytecode = gen.GenerateSharedPixelShader(stage, methodIndex, optionIndex).Bytecode;
+            var gen = new TemplateGenerator.TemplateGenerator();
+            var bytecode = gen.GeneratePixelShader(Type, stage, new List<OptionInfo>() { StaticOptionInfo.GetOptionInfo(Type, methodIndex, optionIndex) }, false).Bytecode;
             return D3DCompiler.Disassemble(bytecode);
         }
 

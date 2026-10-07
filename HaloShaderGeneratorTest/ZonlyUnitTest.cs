@@ -1,6 +1,6 @@
 ﻿using HaloShaderGenerator.DirectX;
 using HaloShaderGenerator.Globals;
-using HaloShaderGenerator.Water;
+using HaloShaderGenerator.ZOnly;
 using System.Collections.Generic;
 using System;
 using System.Linq;
@@ -8,9 +8,9 @@ using HaloShaderGenerator.TemplateGenerator;
 
 namespace HaloShaderGenerator
 {
-    public class WaterUnitTest : GenericUnitTest
+    public class ZonlyUnitTest : GenericUnitTest
     {
-        public WaterUnitTest(string referencePath) : base(referencePath, new WaterGenerator(), ShaderType.Water) { }
+        public ZonlyUnitTest(string referencePath) : base(referencePath, new ZOnlyGenerator(), ShaderType.Zonly) { }
 
         public override string GeneratePixelShader(ShaderStage stage, List<int> shaderOptions)
         {
@@ -28,16 +28,12 @@ namespace HaloShaderGenerator
 
         public override string GenerateVertexShader(VertexType vertex, ShaderStage stage)
         {
-            var gen = new WaterGenerator();
-            var bytecode = gen.GenerateVertexShader(vertex, stage).Bytecode;
-            return D3DCompiler.Disassemble(bytecode);
+            return null;
         }
 
         public override string GenerateSharedVertexShader(VertexType vertex, ShaderStage stage)
         {
-            var gen = new WaterGenerator();
-            var bytecode = gen.GenerateSharedVertexShader(vertex, stage).Bytecode;
-            return D3DCompiler.Disassemble(bytecode);
+            return null;
         }
 
         public override string GenerateExplicitPixelShader(ExplicitShader explicitShader, ShaderStage stage)

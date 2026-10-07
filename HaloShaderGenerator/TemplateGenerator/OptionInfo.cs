@@ -1,13 +1,11 @@
 ﻿
 namespace HaloShaderGenerator.TemplateGenerator
 {
-    public struct OptionInfo
-    {
-        public string Category;
-        public string Option;
-        public string PsMacro;
-        public string VsMacro;
-        public string PsMacroValue;
-        public string VsMacroValue;
-    }
+    public readonly record struct OptionInfo(
+        string Category,
+        string Option,
+        string PsMacro,
+        string VsMacro,
+        string PsMacroValue,
+        string VsMacroValue);
 }
