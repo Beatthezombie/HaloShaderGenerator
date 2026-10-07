@@ -18,14 +18,20 @@ namespace HaloShaderGenerator
 
         public override string GeneratePixelShader(ShaderStage stage, List<int> shaderOptions)
         {
-            var gen = new TemplateGenerator.TemplateGenerator();
+            var gen = new TemplateGenerator.TemplateGenerator
+            {
+                IsMs30 = true // disable for MS30
+            };
             var bytecode = gen.GeneratePixelShader(Type, stage, StaticOptionInfo.OptionIndicesToOptionInfo(Type, shaderOptions), false).Bytecode;
             return D3DCompiler.Disassemble(bytecode);
         }
 
         public override string GenerateSharedPixelShader(ShaderStage stage, int methodIndex, int optionIndex)
         {
-            var gen = new TemplateGenerator.TemplateGenerator();
+            var gen = new TemplateGenerator.TemplateGenerator
+            {
+                IsMs30 = true // disable for MS30
+            };
             var bytecode = gen.GeneratePixelShader(Type, stage, new List<OptionInfo>() { StaticOptionInfo.GetOptionInfo(Type, methodIndex, optionIndex) }, false).Bytecode;
             return D3DCompiler.Disassemble(bytecode);
         }
@@ -135,7 +141,7 @@ namespace HaloShaderGenerator
             return vertexShaderPath;
         }
 
-        public static void DisplayPixelShaderTestResults(bool success, string shaderName, ShaderStage stage, bool usesD3DX)
+        public static void DisplayPixelShaderTestResults(bool success, string shaderName, ShaderStage stage, bool usesD3DX, string mismatch)
         {
             if (IgnoreD3DX && usesD3DX)
                 return;
@@ -143,12 +149,12 @@ namespace HaloShaderGenerator
             string stageFixedLength = stage.ToString().ToLower().PadRight(24);
 
             if (!success)
-                QueuedConsole.QueueMessage($"{shaderName.PadRight(32)}{stageFixedLength}\tnot identical to reference" + (usesD3DX ? " USES D3DX." : ""), ConsoleColor.Red);
+                QueuedConsole.QueueMessage($"{shaderName.PadRight(32)}{stageFixedLength}\tnot identical to reference" + (usesD3DX ? " USES D3DX." : "") + $"\n{mismatch}", ConsoleColor.Red);
             else
                 QueuedConsole.QueueMessage($"{shaderName.PadRight(32)}{stageFixedLength}\tidentical to reference", ConsoleColor.Green);
         }
 
-        public static void DisplayVertexShaderTestResults(bool success, VertexType vertex, ShaderStage stage, bool usesD3DX)
+        public static void DisplayVertexShaderTestResults(bool success, VertexType vertex, ShaderStage stage, bool usesD3DX, string mismatch)
         {
             if (IgnoreD3DX && usesD3DX)
                 return;
@@ -156,12 +162,12 @@ namespace HaloShaderGenerator
             string stageFixedLength = stage.ToString().ToLower().PadRight(24);
 
             if (!success)
-                QueuedConsole.QueueMessage($"{stageFixedLength}\tvertex type {vertex.ToString().ToLower().PadRight(24)}\tnot identical to reference" + (usesD3DX ? " USES D3DX." : ""), ConsoleColor.Red);
+                QueuedConsole.QueueMessage($"{stageFixedLength}\tvertex type {vertex.ToString().ToLower().PadRight(24)}\tnot identical to reference" + (usesD3DX ? " USES D3DX." : "") + $"\n{mismatch}", ConsoleColor.Red);
             else
                 QueuedConsole.QueueMessage($"{stageFixedLength}\tvertex type {vertex.ToString().ToLower().PadRight(24)}\tidentical to reference", ConsoleColor.Green);
         }
 
-        public static void DisplaySharedPixelShaderTestResults(bool success, int methodIndex, int optionIndex, ShaderStage stage, bool usesD3DX)
+        public static void DisplaySharedPixelShaderTestResults(bool success, int methodIndex, int optionIndex, ShaderStage stage, bool usesD3DX, string mismatch)
         {
             if (IgnoreD3DX && usesD3DX)
                 return;
@@ -169,13 +175,14 @@ namespace HaloShaderGenerator
             string stageFixedLength = (stage.ToString().ToLower() + $"_{methodIndex}_{optionIndex}").PadRight(24);
 
             if (!success)
-                QueuedConsole.QueueMessage($"{stageFixedLength}\tnot identical to reference" + (usesD3DX ? " USES D3DX." : ""), ConsoleColor.Red);
+                QueuedConsole.QueueMessage($"{stageFixedLength}\tnot identical to reference" + (usesD3DX ? " USES D3DX." : "") + $"\n{mismatch}", ConsoleColor.Red);
             else
                 QueuedConsole.QueueMessage($"{stageFixedLength}\tidentical to reference", ConsoleColor.Green);
         }
 
-        public static bool CompareShaders(string generatedDissassembly, string filePath, string version, out bool usesD3DX)
+        public static bool CompareShaders(string generatedDissassembly, string filePath, string version, out bool usesD3DX, out string mismatchedDisassembly)
         {
+            string mismatched = string.Empty;
             string fileGuid = Guid.NewGuid().ToString("N") + ".shader";
 
             var generatedShaderFile = new FileInfo(fileGuid);
@@ -186,16 +193,33 @@ namespace HaloShaderGenerator
             }
             var referenceDissasembly = File.ReadAllText(filePath);
             generatedDissassembly = File.ReadAllText(fileGuid);
+            generatedShaderFile.Delete();
 
             bool equal = string.Equals(generatedDissassembly, referenceDissasembly);
-            generatedShaderFile.Delete();
 
             if (!equal)
             {
                 equal = ReorderConstantsAndTest(generatedDissassembly, referenceDissasembly, version);
             }
 
+            if (!equal) // find first mismatch
+            {
+                int line = 1;
+                for (int i = 0; i < generatedDissassembly.Length && i < referenceDissasembly.Length; i++)
+                {
+                    if (generatedDissassembly[i] != referenceDissasembly[i])
+                    {
+                        mismatched = $"Line {line}: {generatedDissassembly.Substring(i, 128)}";
+                        break;
+                    }
+
+                    if (generatedDissassembly[i] == '\n')
+                        line++;
+                }
+            }
+
             usesD3DX = referenceDissasembly.Contains("Generated by Microsoft (R) D3DX9 Shader Compiler");
+            mismatchedDisassembly = mismatched;
 
             return equal;
         }
@@ -432,9 +456,9 @@ namespace HaloShaderGenerator
                 }
 
                 var disassembly = GenerateExplicitPixelShader(explicitShader, entry);
-                bool equal = CompareShaders(disassembly, filePath, "ps_3_0", out bool usesD3DX);
+                bool equal = CompareShaders(disassembly, filePath, "ps_3_0", out bool usesD3DX, out string mismatched);
                 success &= equal;
-                DisplayPixelShaderTestResults(equal, explicitShader.ToString(), entry, usesD3DX);
+                DisplayPixelShaderTestResults(equal, explicitShader.ToString(), entry, usesD3DX, mismatched);
 
                 if (!equal)
                 {
@@ -466,9 +490,9 @@ namespace HaloShaderGenerator
                 }
 
                 var disassembly = GenerateChudPixelShader(chudShader, entry);
-                bool equal = CompareShaders(disassembly, filePath, "ps_3_0", out bool usesD3DX);
+                bool equal = CompareShaders(disassembly, filePath, "ps_3_0", out bool usesD3DX, out string mismatched);
                 success &= equal;
-                DisplayPixelShaderTestResults(equal, chudShader.ToString(), entry, usesD3DX);
+                DisplayPixelShaderTestResults(equal, chudShader.ToString(), entry, usesD3DX, mismatched);
 
                 if (!equal)
                 {
@@ -555,9 +579,9 @@ namespace HaloShaderGenerator
                 foreach (var vertexType in vertexTypes)
                 {
                     var disassembly = GenerateExplicitVertexShader(explicitShader, entry, vertexType);
-                    bool equal = CompareShaders(disassembly, filePath, "vs_3_0", out bool usesD3DX);
+                    bool equal = CompareShaders(disassembly, filePath, "vs_3_0", out bool usesD3DX, out string mismatched);
                     success &= equal;
-                    DisplayPixelShaderTestResults(equal, explicitShader.ToString() + $" {vertexType}", entry, usesD3DX);
+                    DisplayPixelShaderTestResults(equal, explicitShader.ToString() + $" {vertexType}", entry, usesD3DX, mismatched);
 
                     if (!equal)
                     {
@@ -593,9 +617,9 @@ namespace HaloShaderGenerator
                     }
 
                     var disassembly = GenerateChudVertexShader(chudShader, entry, vertexType);
-                    bool equal = CompareShaders(disassembly, filePath, "vs_3_0", out bool usesD3DX);
+                    bool equal = CompareShaders(disassembly, filePath, "vs_3_0", out bool usesD3DX, out string mismatched);
                     success &= equal;
-                    DisplayVertexShaderTestResults(equal, vertexType, entry, usesD3DX);
+                    DisplayVertexShaderTestResults(equal, vertexType, entry, usesD3DX, mismatched);
 
                     if (!equal)
                     {
@@ -707,15 +731,15 @@ namespace HaloShaderGenerator
                     {
                         Console.WriteLine($"No reference shader for {BuildShaderName(testShader)} at {stage.ToString().ToLower()}");
                         GeneratePixelShader(stage, generatorList);
-                        DisplayPixelShaderTestResults(true, BuildShaderName(generatorList), stage, false);
+                        DisplayPixelShaderTestResults(true, BuildShaderName(generatorList), stage, false, string.Empty);
                         success = false;
                         continue;
                     }
 
                     var disassembly = GeneratePixelShader(stage, generatorList);
-                    bool equal = CompareShaders(disassembly, filePath, "ps_3_0", out bool usesD3DX);
+                    bool equal = CompareShaders(disassembly, filePath, "ps_3_0", out bool usesD3DX, out string mismatched);
                     success &= (equal || usesD3DX);
-                    DisplayPixelShaderTestResults(equal, BuildShaderName(generatorList), stage, usesD3DX);
+                    DisplayPixelShaderTestResults(equal, BuildShaderName(generatorList), stage, usesD3DX, mismatched);
 
                     if (Application.OutputAll && !equal)
                     {
@@ -781,9 +805,9 @@ namespace HaloShaderGenerator
                                     success = false;
                                     continue;
                                 }
-                                bool equal = CompareShaders(GenerateSharedPixelShader(stage, i, j), filePath, "ps_3_0", out bool usesD3DX);
+                                bool equal = CompareShaders(GenerateSharedPixelShader(stage, i, j), filePath, "ps_3_0", out bool usesD3DX, out string mismatched);
                                 success &= equal;
-                                DisplaySharedPixelShaderTestResults(equal, i, j, stage, usesD3DX);
+                                DisplaySharedPixelShaderTestResults(equal, i, j, stage, usesD3DX, mismatched);
                             }
                         }
 
@@ -800,9 +824,9 @@ namespace HaloShaderGenerator
                         success = false;
                         return success;
                     }
-                    bool equal = CompareShaders(GenerateSharedPixelShader(stage, -1, -1), filePath, "ps_3_0", out bool usesD3DX);
+                    bool equal = CompareShaders(GenerateSharedPixelShader(stage, -1, -1), filePath, "ps_3_0", out bool usesD3DX, out string mismatched);
                     success &= equal;
-                    DisplaySharedPixelShaderTestResults(equal, -1, -1, stage, usesD3DX);
+                    DisplaySharedPixelShaderTestResults(equal, -1, -1, stage, usesD3DX, mismatched);
                 }
             }
 
@@ -856,9 +880,9 @@ namespace HaloShaderGenerator
                         continue;
                     }
 
-                    bool equal = CompareShaders(GenerateSharedVertexShader(vertex, stage), filePath, "vs_3_0", out bool usesD3DX);
+                    bool equal = CompareShaders(GenerateSharedVertexShader(vertex, stage), filePath, "vs_3_0", out bool usesD3DX, out string mismatched);
                     success &= equal;
-                    DisplayVertexShaderTestResults(equal, vertex, stage, usesD3DX);
+                    DisplayVertexShaderTestResults(equal, vertex, stage, usesD3DX, mismatched);
                 }
             }
 

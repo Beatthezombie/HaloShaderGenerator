@@ -9,6 +9,7 @@ namespace HaloShaderGenerator.Generator
 {
     public class GeneratorBaseNew
     {
+        public bool IsMs30 = false;
         private List<D3D.SHADER_MACRO> UserMacros = null;
 
         public List<D3D.SHADER_MACRO> GetUserMacros() => UserMacros;

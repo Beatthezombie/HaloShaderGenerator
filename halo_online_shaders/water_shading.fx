@@ -12,10 +12,8 @@ Copyright (c) Microsoft Corporation, 2005. all rights reserved.
 #include "utilities.fx"
 
 // we have separate reach ps
-#ifdef PIXEL_SHADER
-#ifdef APPLY_FIXES
+#if defined(PIXEL_SHADER) && defined(APPLY_FIXES) && !defined(BUILD_MS30)
 #include "water_shading_reach.fx"
-#endif
 #endif
 
 /* vertex shader implementation */
@@ -348,8 +346,10 @@ s_water_interpolators transform_vertex( s_water_render_vertex IN )
 	incident_ws.xyz= normalize(incident_ws.xyz);
 
 	float min_mip_level = 1.0f;
+#if !defined(BUILD_MS30)
 	if ( !TEST_CATEGORY_OPTION(reach_compatibility, disabled) )
 		min_mip_level = 0.0f;
+#endif
 
 	float mipmap_level= max(incident_ws.w / wave_visual_damping_distance, min_mip_level); 		
 
@@ -714,7 +714,7 @@ float3 decode_bpp16_luvw(
 
 float construct_z(float z)
 {
-#if (DX_VERSION == 9) && defined(pc)
+#if (DX_VERSION == 9) && defined(pc) && !defined(BUILD_MS30)
 	// these are algebraically the same, however former caused precision loss (visible banding at distance)
 	//return 1.0f - (k_ps_water_view_depth_constant.x / z + k_ps_water_view_depth_constant.y);
 	return 1.0f - k_ps_water_view_depth_constant.y - k_ps_water_view_depth_constant.x / z;
@@ -728,8 +728,10 @@ float construct_z(float z)
 // shade water surface
 accum_pixel water_shading(s_water_interpolators INTERPOLATORS)
 {
+#if !defined(BUILD_MS30)
 	if ( !TEST_CATEGORY_OPTION(reach_compatibility, disabled) )
 		return water_shading_reach(INTERPOLATORS);
+#endif
 
 #if DX_VERSION == 11
 	// calcuate texcoord in screen space
@@ -941,7 +943,11 @@ accum_pixel water_shading(s_water_interpolators INTERPOLATORS)
 		texcoord_refraction= lerp(
 			texcoord_ss, 
 			texcoord_refraction, 
+#if defined(BUILD_MS30)
+			(depth_refraction>INTERPOLATORS.position_ss.z));
+#else
 			(depth_refraction<INTERPOLATORS.position_ss.z));
+#endif
 
 		
 		color_refraction= sample2D(scene_ldr_texture, texcoord_refraction);		
@@ -1169,7 +1175,11 @@ accum_pixel water_shading(s_water_interpolators INTERPOLATORS)
 #endif
 */
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-	return convert_to_render_target(float4(output_color, 1.0f), true, true, 0.0f);		
+	return convert_to_render_target(float4(output_color, 1.0f), true, true
+#ifdef SSR_ENABLE
+	, 0.0f
+#endif
+	);		
 }
 
 #endif //PIXEL_SHADER

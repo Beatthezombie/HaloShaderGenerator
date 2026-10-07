@@ -106,7 +106,8 @@ namespace HaloShaderGenerator.TemplateGenerator
             Shared.Alpha_Blend_Source alphaBlendSource,
             bool applyFixes,
             bool vs = false,
-            VertexType vertexType = VertexType.World)
+            VertexType vertexType = VertexType.World,
+            bool isMs30 = false)
         {
             string vertexTypeSnake = string.Concat(vertexType.ToString().Select(
                 (x, i) => i > 0 && char.IsUpper(x) ? "_" + x.ToString() : x.ToString())).ToLower();
@@ -120,10 +121,11 @@ namespace HaloShaderGenerator.TemplateGenerator
             macros.Add(ShaderGeneratorBase.CreateMacro("DX_VERSION", "9"));
             macros.Add(ShaderGeneratorBase.CreateMacro("disable_register_reorder", "1"));
 
-            // TODO: This should be a 'user' macro
-            macros.Add(ShaderGeneratorBase.CreateMacro("BUILD_MS30", "1"));
-
-            if (SsrEnable(shaderType))
+            if (isMs30)
+            {
+                macros.Add(ShaderGeneratorBase.CreateMacro("BUILD_MS30", "1"));
+            }
+            else if (SsrEnable(shaderType))
             {
                 switch (entryPoint)
                 {
@@ -200,7 +202,7 @@ namespace HaloShaderGenerator.TemplateGenerator
             List<D3D.SHADER_MACRO> macros = new List<D3D.SHADER_MACRO>();
 
             CreateGlobalMacros(macros, shaderType, entryPoint, GetBlendMode(currentOptions),
-                GetMisc(currentOptions), GetAlphaTest(currentOptions), GetAlphaBlendSource(currentOptions), applyFixes);
+                GetMisc(currentOptions), GetAlphaTest(currentOptions), GetAlphaBlendSource(currentOptions), applyFixes, false, VertexType.World, IsMs30);
             AppendUserMacros(macros); // TODO: move to CreateGlobalMacros
 
             foreach (var option in currentOptions)
@@ -226,7 +228,7 @@ namespace HaloShaderGenerator.TemplateGenerator
             List<D3D.SHADER_MACRO> macros = new List<D3D.SHADER_MACRO>();
 
             CreateGlobalMacros(macros, shaderType, entryPoint, GetBlendMode(currentOptions),
-                GetMisc(currentOptions), GetAlphaTest(currentOptions), GetAlphaBlendSource(currentOptions), applyFixes, true, vertexType);
+                GetMisc(currentOptions), GetAlphaTest(currentOptions), GetAlphaBlendSource(currentOptions), applyFixes, true, vertexType, IsMs30);
             AppendUserMacros(macros); // TODO: move to CreateGlobalMacros
 
             foreach (var option in currentOptions)

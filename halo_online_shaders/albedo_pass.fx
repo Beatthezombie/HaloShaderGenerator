@@ -5,7 +5,7 @@ struct albedo_pixel
 {
 	float4 albedo_specmask : SV_Target0;		// albedo color (RGB) + specular mask (A)
 	float4 normal : SV_Target1;					// normal (XYZ)
-#if defined(pc) && (DX_VERSION == 9)
+#if defined(pc) && (DX_VERSION == 9) && !defined(BUILD_MS30)
 	float4 pos_w : SV_Target2;
 	//#ifdef APPLY_FIXES
 	//float4 geo_normal : SV_Target3; 			// geometry normal (XYZ)
@@ -35,7 +35,7 @@ albedo_pixel convert_to_albedo_target(in float4 albedo, in float3 normal, in flo
 	result.normal.xyz= normal * 0.5f + 0.5f;		// bias and offset to all positive
 	result.normal.w= albedo.w;
 
-#if defined(pc) && (DX_VERSION == 9)
+#if defined(pc) && (DX_VERSION == 9) && !defined(BUILD_MS30)
 	result.pos_w = pos_w;
 	//#ifdef APPLY_FIXES
 	//result.geo_normal.xyz = geo_normal * 0.5f + 0.5f;
@@ -55,7 +55,7 @@ albedo_pixel convert_to_albedo_target_no_srgb(in float4 albedo, in float3 normal
 	result.normal.xyz= normal * 0.5f + 0.5f;		// bias and offset to all positive
 	result.normal.w= albedo.w;
 
-#if defined(pc) && (DX_VERSION == 9)
+#if defined(pc) && (DX_VERSION == 9) && !defined(BUILD_MS30)
 	result.pos_w = pos_w;
 	//#ifdef APPLY_FIXES
 	//result.geo_normal.xyz = geo_normal * 0.5f + 0.5f;
