@@ -83,13 +83,19 @@ void deform_world(
 {
 	deform_flat_world(vertex, local_to_world_transform);
 	
+#if !defined(BUILD_MS30)
 	vertex.binormal= checkBinormal(vertex.normal.xyz, vertex.binormal.xyz, vertex.tangent.xyz);
+#endif
 }
 void deform_world(inout float4 pos) {}
 
 void decompress_deform_flat_rigid(inout s_rigid_vertex vertex)
 {
+#if defined(BUILD_MS30)
+	decompress_position(vertex.position.xyz);
+#else
 	decompress_position(vertex.position);
+#endif
 	decompress_texcoord(vertex.texcoord);
 }
 
@@ -100,7 +106,11 @@ void deform_flat_rigid(
 	decompress_deform_flat_rigid(vertex);
 
 	local_to_world_transform = Nodes[0];
+#if defined(BUILD_MS30)
+	vertex.position.xyz= transform_point(vertex.position.xyz, local_to_world_transform);
+#else
 	vertex.position= transform_point(vertex.position, local_to_world_transform);
+#endif
 }
 void deform_flat_rigid(inout float4 pos) {}
 
@@ -129,7 +139,11 @@ void deform_rigid(inout float4 pos) {}
 
 void decompress_deform_flat_skinned(inout s_skinned_vertex vertex)
 {
+#if defined(BUILD_MS30)
+	decompress_position(vertex.position.xyz);
+#else
 	decompress_position(vertex.position);
+#endif
 	decompress_texcoord(vertex.texcoord);
 }
 
@@ -158,7 +172,11 @@ void deform_flat_skinned(
 									Nodes[vertex.node_indices.z][2] * vertex.node_weights.z +
 									Nodes[vertex.node_indices.w][2] * vertex.node_weights.w;
 
+#if defined(BUILD_MS30)
+	vertex.position.xyz= transform_point(vertex.position.xyz, local_to_world_transform);
+#else
 	vertex.position= transform_point(vertex.position, local_to_world_transform);
+#endif
 	
 	vertex.binormal= checkBinormal(vertex.normal.xyz, vertex.binormal.xyz, vertex.tangent.xyz);
 }
@@ -217,9 +235,11 @@ void deform_tiny_position(inout float4 pos) {}
 
 void squish_local_view(inout float4 position)
 {
+#if !defined(BUILD_MS30)
 	position.z+= v_squish_params.w*((v_squish_params.x*position.w-v_squish_params.y)*v_squish_params.z-position.z);
+#endif
 	
-	if (ENTRY_POINT(entry_point)!= ENTRY_POINT_albedo)
+	if (ENTRY_POINT(entry_point) == ENTRY_POINT_shadow_generate)
 	{
 		if (IS_VERTEX_TYPE(s_skinned_vertex) || IS_VERTEX_TYPE(s_flat_skinned_vertex))
 		{
@@ -231,10 +251,41 @@ void squish_local_view(inout float4 position)
 			position.z-= squish_amount;
 		}
 		
-		if (ENTRY_POINT(entry_point)== ENTRY_POINT_active_camo)
-			position.z -= 0.00002f;
 	}
+	else if (ENTRY_POINT(entry_point) == ENTRY_POINT_active_camo)
+		position.z -= 0.00002f;
 }
+
+// mixed radix packing (base 181)
+float3 unpack_mixed_radix_normal(float w)
+{
+	float3 normal;
+	float s = sign(w);
+
+	// position.w stores GPU normalized signed 16bit integer, denormalize and rescale to [-1,1]
+	float2 t = frac(abs(w * 32767.0f) / float2(181.0f, 181.0f*181.0f)) * 2.0f - 1.0f;
+	normal.xz = t * float2(181.0f/179.0f, 181.0f/180.0f);
+
+	// construct y
+	normal.y = s * sqrt(max(1.0f - dot(normal.xz, normal.xz), 0.0f));
+
+	return normal;
+}
+
+#ifndef TEST_DEFORM_TYPE
+#define TEST_DEFORM_TYPE(deform) TEST_DEFORM_TYPE_##deform
+#define TEST_DEFORM_TYPE_deform_world 0
+#endif
+
+#if defined(BUILD_MS30)
+	#if IS_VERTEX_TYPE(s_world_vertex)
+	#define VERTEX_GET_NORMAL(vertex) (frac(vertex.position.w / float3(256, 65536, 16777216)) * 2.0f - 1.0f)
+	#else
+	#define VERTEX_GET_NORMAL(vertex) (unpack_mixed_radix_normal(vertex.position.w))
+	#endif
+#else
+#define VERTEX_GET_NORMAL(vertex) (vertex.normal.xyz)
+#endif
 
 // Workaround for z-fighting problem...
 // Calculation of output interpolator "position" must be completely segregated from the
@@ -245,14 +296,17 @@ void always_local_to_view(
 	out float4 local_to_world_transform[3],
 	out float4 position, bool is_albedo = false)
 {
+#if defined(BUILD_MS30)
+	vertex.normal.xyz = VERTEX_GET_NORMAL(vertex);
+#endif
 	//[branch]
 	//if (v_always_true) // always true - poor man's isolate ;)
 	//{
 		deform(vertex, local_to_world_transform);
 	//}
-	position= mul(float4(vertex.position, 1.0f), View_Projection);
+	position= mul(float4(vertex.position.xyz, 1.0f), View_Projection);
 	
-#ifndef APPLY_FIXES
+#if !defined(APPLY_FIXES)
 	squish_local_view(position);
 #endif
 }

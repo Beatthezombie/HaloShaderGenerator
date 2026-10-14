@@ -435,6 +435,10 @@ s_contrail_render_pixel_out default_ps(s_contrail_interpolators INTERPOLATORS)
 		blended.xyz+= vIN.m_color_add;
 	}
 
-	return CONVERT_TO_RENDER_TARGET_FOR_BLEND(blended, false, false, 0.0f);
+	return CONVERT_TO_RENDER_TARGET_FOR_BLEND(blended, false, false
+#if !defined(BUILD_MS30)
+	, 0.0f
+#endif
+	);
 }
 #endif	//#ifdef PIXEL_SHADER

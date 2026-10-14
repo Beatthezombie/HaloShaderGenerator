@@ -75,6 +75,24 @@ void compute_scattering(
 		view_height*= k_log2_e;
 		scene_height*= k_log2_e;
 		
+#if defined(BUILD_MS30)
+		float dp, dm;
+
+		[flatten]
+		if (diff * diff > 0.001f)
+		{
+			dp= -(exp2(- view_height / REFERENCE_MIE_HEIGHT_SCALE) - exp2(- scene_height / REFERENCE_MIE_HEIGHT_SCALE)) * dist * REFERENCE_MIE_HEIGHT_SCALE / diff;
+			dm= -(exp2(- view_height / REFERENCE_RAY_HEIGHT_SCALE) - exp2(- scene_height / REFERENCE_RAY_HEIGHT_SCALE)) * dist * REFERENCE_RAY_HEIGHT_SCALE / diff;
+		}
+		else
+		{
+			dp= exp2(- view_height / REFERENCE_MIE_HEIGHT_SCALE) * dist;
+			dm= exp2(- view_height / REFERENCE_RAY_HEIGHT_SCALE) * dist;
+		}
+		
+		//total extinction
+		extinction= exp2(-(TOTAL_RAYLEIGH_LOG2E * dm + TOTAL_MIE_LOG2E * dp));
+#else
 		if (diff * diff > 0.001f)
 		{
 			float dp= -(exp2(- view_height / REFERENCE_MIE_HEIGHT_SCALE) - exp2(- scene_height / REFERENCE_MIE_HEIGHT_SCALE)) * dist * REFERENCE_MIE_HEIGHT_SCALE / diff;
@@ -91,6 +109,7 @@ void compute_scattering(
 			//total extinction
 			extinction= exp2(-(TOTAL_RAYLEIGH_LOG2E * dm + TOTAL_MIE_LOG2E * dp));
 		}
+#endif
 		
 		//rayleigh phase function
 		float3 beta_m_theta= RAYLEIGH_THETA_PREFIX * (1.0f + c_theta * c_theta);

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using HaloShaderGenerator.Generator;
 using System.Linq;
+using HaloShaderGenerator.TemplateGenerator;
 
 namespace HaloShaderGenerator
 {
@@ -28,7 +29,7 @@ namespace HaloShaderGenerator
         static readonly string ShaderReferencePath = @"D:\REPOS\Epsilon\TagTool\TagTool\bin\x64\Debug\HaloOnline700123\shaders";
         static readonly bool UnitTest = false;
         static readonly bool TestSpecificShader = true;
-        static readonly ShaderType TestShaderType = ShaderType.Zonly;
+        static readonly ShaderType TestShaderType = ShaderType.Terrain;
 
         static public readonly bool OutputAll = true;
 
@@ -610,11 +611,22 @@ namespace HaloShaderGenerator
 
         static void TestSharedVertexShader(ShaderType shaderType, VertexType vertexType, ShaderStage stage)
         {
+            // TODO: remove
             IShaderGenerator generator = GetShaderGenerator(shaderType);
 
             if (generator.IsEntryPointSupported(stage) && generator.IsVertexShaderShared(stage) && generator.IsVertexFormatSupported(vertexType))
             {
-                var bytecode = generator.GenerateSharedVertexShader(vertexType, stage).Bytecode;
+                var gen = new TemplateGenerator.TemplateGenerator
+                {
+                    IsMs30 = true // disable for MS30
+                };
+
+                // hack: we need macros defined, use 0 for all options
+                List<int> options = [.. new int[StaticOptionInfo.GetCategoryCount(shaderType)]];
+                List<OptionInfo> optionInfos = StaticOptionInfo.OptionIndicesToOptionInfo(shaderType, options);
+
+                var bytecode = gen.GenerateVertexShader(shaderType, stage, vertexType, optionInfos, false).Bytecode;
+
                 var disassembly = D3DCompiler.Disassemble(bytecode);
                 WriteShaderFile($"generated_{stage.ToString().ToLower()}_{vertexType.ToString().ToLower()}.glvs", disassembly);
             }

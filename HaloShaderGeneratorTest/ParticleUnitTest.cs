@@ -10,40 +10,6 @@ namespace HaloShaderGenerator
     {
         public ParticleUnitTest(string referencePath) : base(referencePath, new ParticleGenerator(), ShaderType.Particle) { }
 
-        public override string GeneratePixelShader(ShaderStage stage, List<int> shaderOptions)
-        {
-            var gen = new TemplateGenerator.TemplateGenerator
-            {
-                IsMs30 = true // disable for MS30
-            };
-            var bytecode = gen.GeneratePixelShader(Type, stage, StaticOptionInfo.OptionIndicesToOptionInfo(Type, shaderOptions), false).Bytecode;
-            return D3DCompiler.Disassemble(bytecode);
-        }
-
-        public override string GenerateSharedPixelShader(ShaderStage stage, int methodIndex, int optionIndex)
-        {
-            var gen = new TemplateGenerator.TemplateGenerator
-            {
-                IsMs30 = true // disable for MS30
-            };
-            var bytecode = gen.GeneratePixelShader(Type, stage, new List<OptionInfo>() { StaticOptionInfo.GetOptionInfo(Type, methodIndex, optionIndex) }, false).Bytecode;
-            return D3DCompiler.Disassemble(bytecode);
-        }
-
-        public override string GenerateVertexShader(VertexType vertex, ShaderStage stage)
-        {
-            var gen = new ParticleGenerator();
-            var bytecode = gen.GenerateVertexShader(vertex, stage).Bytecode;
-            return D3DCompiler.Disassemble(bytecode);
-        }
-
-        public override string GenerateSharedVertexShader(VertexType vertex, ShaderStage stage)
-        {
-            var gen = new ParticleGenerator();
-            var bytecode = gen.GenerateSharedVertexShader(vertex, stage).Bytecode;
-            return D3DCompiler.Disassemble(bytecode);
-        }
-
         public override string GenerateExplicitPixelShader(ExplicitShader explicitShader, ShaderStage stage)
         {
             throw new System.NotImplementedException();

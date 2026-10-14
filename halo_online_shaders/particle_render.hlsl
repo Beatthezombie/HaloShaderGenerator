@@ -11,7 +11,7 @@ Shaders for particle renders, quad manufacture
 
 // Don't allocate any constant space for properties
 #define PARTICLE_NO_PROPERTY_EVALUATE 1
-#ifndef APPLY_FIXES
+#if !defined(APPLY_FIXES) && !defined(BUILD_MS30)
 #define DISTORTION_MULTISAMPLED 1
 #endif
 
@@ -832,6 +832,7 @@ float4 sample_diffuse(float2 texcoord_sprite, float2 texcoord_billboard, float p
 		return sample2D(base_map, transform_texcoord(texcoord_sprite, base_map_xform));
 	}
 	
+#if !defined(BUILD_MS30)
 	IF_CATEGORY_OPTION(albedo, diffuse_modulated)
 	{
 		float4 diffuse= tex2D(base_map, texcoord_sprite);
@@ -847,6 +848,7 @@ float4 sample_diffuse(float2 texcoord_sprite, float2 texcoord_billboard, float p
 		float4 diffuse= float4(saturate(tint_color.rgb * glow * exp2(glow * 6)), ramp);
 		return diffuse;
 	}
+#endif
 	
 	IF_CATEGORY_OPTION(albedo, diffuse_plus_billboard_alpha)
 	{
@@ -899,6 +901,7 @@ float4 sample_diffuse(float2 texcoord_sprite, float2 texcoord_billboard, float p
 		return float4(sample2D(palette, float2(index, palette_v)).xyz, alpha);
 	}
 	
+#if !defined(BUILD_MS30)
 	IF_CATEGORY_OPTION(albedo, palettized_plasma)
 	{
 		float noise_a=	tex2D(base_map,		texcoord_sprite * base_map_xform.xy		+ base_map_xform.zw).r;
@@ -932,6 +935,7 @@ float4 sample_diffuse(float2 texcoord_sprite, float2 texcoord_billboard, float p
 
 		return float4(palette_value.rgb, alpha);
 	}
+#endif
 }
 
 float compute_depth_fade(float2 screen_coords, float depth, float range)
@@ -951,6 +955,10 @@ float compute_depth_fade(float2 screen_coords, float depth, float range)
 //	depth_value = float4(1,2,3,4);
 	float2 screen_texcoord= (screen_coords.xy + float2(0.5f, 0.5f)) / texture_size.xy;
 	float scene_depth= sample2D(depth_buffer, screen_texcoord).x;
+
+	#if defined(BUILD_MS30)
+		scene_depth= 1.0f / (depth_constants.x + scene_depth * depth_constants.y);	// convert to real depth
+	#endif
 #else
 	float4 depth_value;
 	asm 
@@ -989,9 +997,13 @@ float3 compute_normalized_distortion(s_particle_render_vertex IN, float2 screen_
 	clip(dot(frame_displacement, frame_displacement)==0.0f ? -1 : 1);
 
 	// Now use full positive range of render target [0.0,32.0)
+#if	defined(BUILD_MS30)
+	float2 distortion= frame_displacement;
+#else
 	float2 distortion= distortion_scale * frame_displacement;
+#endif
 	float2 saved_distortion = distortion;
-#ifdef pc
+#if defined(pc) && !defined(BUILD_MS30)
 	distortion /= 32.0f; // on PC use [0, 1] range instead [6/12/2012 paul.smirnov]
 #endif // pc
 	
@@ -1015,6 +1027,22 @@ s_particle_render_pixel_out default_ps(
 //#ifndef pc
 	s_particle_render_vertex IN= read_particle_interpolators(INTERPOLATORS);
 
+#if defined(BUILD_MS30)
+	float4 blended= TEST_CATEGORY_OPTION(frame_blend, on)
+		? lerp(sample_diffuse(IN.m_texcoord_sprite0, IN.m_texcoord_billboard, IN.m_palette, IN.m_color.a, 0.0f), 
+				sample_diffuse(IN.m_texcoord_sprite1, IN.m_texcoord_billboard, IN.m_palette, IN.m_color.a, 0.0f), IN.m_frame_blend)
+		: sample_diffuse(IN.m_texcoord_sprite0, IN.m_texcoord_billboard, IN.m_palette, IN.m_color.a, 0.0f);	
+
+#ifdef PARTICLE_PIXEL_KILL	// probably not worth it, since you would need all pixels in a vector to die	
+	static float alpha_cutoff= 0.5f/255.0f;
+	clip(IN.m_color.w*blended.w<alpha_cutoff ? -1 : 1);	// early out if sampled alpha is 0, only helps if all ALU threads take it
+#endif
+
+	float depth_fade= (TEST_CATEGORY_OPTION(depth_fade, on) && !TEST_CATEGORY_OPTION(blend_mode, opaque))
+ 		? compute_depth_fade(screen_coords, IN.m_depth, depth_fade_range)
+ 		: 1.0f;
+
+#else
 // this will change compile order, should be after pixel kill
  	float depth_fade= ((TEST_CATEGORY_OPTION(depth_fade, on)/* || TEST_CATEGORY_OPTION(depth_fade, palette_shift)*/) && !TEST_CATEGORY_OPTION(blend_mode, opaque))
  		? compute_depth_fade(screen_coords, IN.m_depth, depth_fade_range)
@@ -1031,6 +1059,8 @@ s_particle_render_pixel_out default_ps(
 	clip(IN.m_color.w*blended.w<alpha_cutoff ? -1 : 1);	// early out if sampled alpha is 0, only helps if all ALU threads take it
 #endif
 
+#endif // defined(BUILD_MS30)
+
 // TODO: options with _diffuse shouldn't be bump converting...
 	if (IS_DISTORTION_PARTICLE)
 	{
@@ -1040,7 +1070,10 @@ s_particle_render_pixel_out default_ps(
 		[branch]
 #endif
 		if ((TEST_CATEGORY_OPTION(specialized_rendering, distortion_expensive) || TEST_CATEGORY_OPTION(specialized_rendering, distortion)
-		|| TEST_CATEGORY_OPTION(specialized_rendering, distortion_expensive_diffuse))
+#if !defined(BUILD_MS30)
+		|| TEST_CATEGORY_OPTION(specialized_rendering, distortion_expensive_diffuse)
+#endif
+		)
 #if APPLY_FIXES
 		&& is_normal_basemap
 #endif
@@ -1052,14 +1085,20 @@ s_particle_render_pixel_out default_ps(
 
 		float3 normalized_displacement= compute_normalized_distortion(IN, screen_coords, blended, depth_fade);
 		accum_pixel distorted_pixel;
+#if defined(BUILD_MS30)
+		distorted_pixel.color= float4(abs(normalized_displacement.rg), 1.0f, 1.0f);
+#else
 		distorted_pixel.color= float4(normalized_displacement.rg, 0.0f, 1.0f);
+#endif
 #ifdef APPLY_FIXES
 		distorted_pixel.color.a= normalized_displacement.b;
 #endif
 
 #ifndef LDR_ONLY
 		distorted_pixel.dark_color= float4(0.0f, 0.0f, 0.0f, 0.0f);
+	#ifdef SSR_ENABLE
 		distorted_pixel.ssr_color= float4(0.0f, 0.0f, 0.0f, 0.0f);
+	#endif
 #endif
 		return distorted_pixel;
 	}
@@ -1122,6 +1161,10 @@ s_particle_render_pixel_out default_ps(
 // 	float4 blended= float4(0.0f, 0.0f, 0.0f, 0.0f);
 // #endif	//#ifndef pc #else
 
-	return CONVERT_TO_RENDER_TARGET_FOR_BLEND(blended, false, false, 0.0f);
+	return CONVERT_TO_RENDER_TARGET_FOR_BLEND(blended, false, false
+	#ifdef SSR_ENABLE
+	, 0.0f
+	#endif
+	);
 }
 #endif	//#ifdef PIXEL_SHADER

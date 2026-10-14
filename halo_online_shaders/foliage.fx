@@ -97,6 +97,10 @@ void tree_animation_special_local_to_view(
     out float4 local_to_world_transform[3], 
     out float4 position)
 {
+#if defined(BUILD_MS30)
+	vertex.normal.xyz = VERTEX_GET_NORMAL(vertex);
+#endif
+
     // always practice safe-shader-compilation, kids.
     // (brought to you by trojan)
     [isolate]
@@ -119,8 +123,9 @@ void tree_animation_special_local_to_view(
          float2 vertex_texture_coord=float2(0,0);
          // and probabally crash me here next time.
 #endif
-         vertex_copy.position+=animation_offset(vertex_texture_coord);
-         position= mul(float4(vertex_copy.position, 1.0f), View_Projection);
+		 vertex.normal.xyz = vertex_copy.normal.xyz;
+         vertex_copy.position.xyz+=animation_offset(vertex_texture_coord);
+         position= mul(float4(vertex_copy.position.xyz, 1.0f), View_Projection);
        }
        else 
        {
@@ -178,7 +183,11 @@ struct albedo_vsout
 	float4 position					: SV_Position;
 	//float clip_distance				: SV_ClipDistance;
 	float2 texcoord					: TEXCOORD0;
+#if defined(BUILD_MS30)
+	float3 normal					: TEXCOORD1;
+#else
 	float4 normal					: TEXCOORD1;
+#endif
 #ifdef misc_attr_define
 	float4 misc						: TEXCOORD9;
 #endif
@@ -203,7 +212,9 @@ albedo_vsout albedo_vs(
 	tree_animation_special_local_to_view(vertex, local_to_world_transform, vsout.position);
 
 	vsout.normal.xyz = vertex.normal;
+#if !defined(BUILD_MS30)
 	vsout.normal.w = vsout.position.w;
+#endif
 	vsout.texcoord = vertex.texcoord;
 	
 	//vsout.clip_distance = dot(vsout.position, v_clip_plane);
@@ -231,7 +242,13 @@ albedo_pixel albedo_ps(
 	albedo.w= output_alpha;
 #endif
 	
-	return convert_to_albedo_target(albedo, vsout.normal.xyz, vsout.normal.w, vsout.normal.xyz);
+	return convert_to_albedo_target(albedo, vsout.normal.xyz, 
+#if defined(BUILD_MS30)
+	0.0f,
+#else
+	vsout.normal.w, 
+#endif
+	vsout.normal.xyz);
 }
 
 PARAM(float, diffuse_coefficient);

@@ -15,6 +15,10 @@
 //@generate world
 LOCAL_SAMPLER_2D(basemap_sampler, 0);
 
+#if defined(BUILD_MS30)
+VERTEX_CONSTANT(float4, lighting, k_alpha_test_shader_lighting_constant);
+#endif
+
 struct alpha_test_output
 {
 	float4 position		:SV_Position;

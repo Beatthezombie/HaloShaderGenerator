@@ -84,11 +84,15 @@ void shadow_generate_ps(
 #define PCF_HEIGHT 4
 
 #ifdef pc
-#ifdef APPLY_FIXES
+	#ifdef APPLY_FIXES
 #define pixel_size shadow_map_pixel_size		// shadow pixel size...  good thing we care about PC...
-#else
+	#else
+		#if defined(BUILD_MS30)
+#define pixel_size float2(1.0/1024.0f, 1.0/1024.0f)		// ###ctchou $TODO THIS NEEDS TO BE PASSED IN!!!
+		#else
 #define pixel_size float2(1.0/512.0f, 1.0/512.0f)		// ###ctchou $TODO THIS NEEDS TO BE PASSED IN!!!
-#endif
+		#endif
+	#endif
 #endif
 
 #include "texture.fx"
@@ -100,6 +104,20 @@ float sample_percentage_closer(float3 fragment_shadow_position, float depth_bias
 	return color;
 }
 
+#if defined(BUILD_MS30)
+
+float sample_percentage_closer_PCF_3x3_block(float3 fragment_shadow_position, float depth_bias)
+{
+	float color=
+		tex2Dproj(shadow_depth_map_1, float4(fragment_shadow_position.xy + float2(-1.0f, -1.0f) * pixel_size, fragment_shadow_position.z, 1.0f)).r +
+		tex2Dproj(shadow_depth_map_1, float4(fragment_shadow_position.xy + float2(+1.0f, -1.0f) * pixel_size, fragment_shadow_position.z, 1.0f)).r +
+		tex2Dproj(shadow_depth_map_1, float4(fragment_shadow_position.xy + float2(-1.0f, +1.0f) * pixel_size, fragment_shadow_position.z, 1.0f)).r +
+		tex2Dproj(shadow_depth_map_1, float4(fragment_shadow_position.xy + float2(+1.0f, +1.0f) * pixel_size, fragment_shadow_position.z, 1.0f)).r;
+
+	return color / 4.0f;
+}
+
+#else
 
 float sample_percentage_closer_PCF_3x3_block(float3 fragment_shadow_position, float depth_bias)					// 9 samples, 0 predicated
 {
@@ -122,7 +140,7 @@ float sample_percentage_closer_PCF_3x3_block(float3 fragment_shadow_position, fl
 					
 	return color / 9.0f;
 }
-
+#endif // defined(BUILD_MS30)
 
 float sample_percentage_closer_PCF_3x3_block_predicated(float3 fragment_shadow_position, float depth_bias)					// 9 samples, 5 predicated on 4
 {
@@ -190,6 +208,27 @@ float sample_percentage_closer_PCF_3x3_diamond_predicated(float3 fragment_shadow
 	}
 }
 
+#if defined(BUILD_MS30)
+float sample_percentage_closer_PCF_5x5_block_predicated(float3 fragment_shadow_position, float depth_bias)
+{
+	float color=
+		tex2Dproj(shadow_depth_map_1, float4(fragment_shadow_position.xy + float2(-1.0f, -3.0f) * pixel_size, fragment_shadow_position.z, 1.0f)).r +
+		tex2Dproj(shadow_depth_map_1, float4(fragment_shadow_position.xy + float2(+1.0f, -3.0f) * pixel_size, fragment_shadow_position.z, 1.0f)).r +
+		tex2Dproj(shadow_depth_map_1, float4(fragment_shadow_position.xy + float2(-3.0f, -1.0f) * pixel_size, fragment_shadow_position.z, 1.0f)).r +
+		tex2Dproj(shadow_depth_map_1, float4(fragment_shadow_position.xy + float2(-1.0f, -1.0f) * pixel_size, fragment_shadow_position.z, 1.0f)).r +
+		tex2Dproj(shadow_depth_map_1, float4(fragment_shadow_position.xy + float2(+1.0f, -1.0f) * pixel_size, fragment_shadow_position.z, 1.0f)).r +
+		tex2Dproj(shadow_depth_map_1, float4(fragment_shadow_position.xy + float2(+3.0f, -1.0f) * pixel_size, fragment_shadow_position.z, 1.0f)).r +
+		tex2Dproj(shadow_depth_map_1, float4(fragment_shadow_position.xy + float2(-3.0f, +1.0f) * pixel_size, fragment_shadow_position.z, 1.0f)).r +
+		tex2Dproj(shadow_depth_map_1, float4(fragment_shadow_position.xy + float2(-1.0f, +1.0f) * pixel_size, fragment_shadow_position.z, 1.0f)).r +
+		tex2Dproj(shadow_depth_map_1, float4(fragment_shadow_position.xy + float2(+1.0f, +1.0f) * pixel_size, fragment_shadow_position.z, 1.0f)).r +
+		tex2Dproj(shadow_depth_map_1, float4(fragment_shadow_position.xy + float2(+3.0f, +1.0f) * pixel_size, fragment_shadow_position.z, 1.0f)).r +
+		tex2Dproj(shadow_depth_map_1, float4(fragment_shadow_position.xy + float2(-1.0f, +3.0f) * pixel_size, fragment_shadow_position.z, 1.0f)).r +
+		tex2Dproj(shadow_depth_map_1, float4(fragment_shadow_position.xy + float2(+1.0f, +3.0f) * pixel_size, fragment_shadow_position.z, 1.0f)).r;
+
+	return color / 12.0f;
+}
+
+#else
 
 float sample_percentage_closer_PCF_5x5_block_predicated(float3 fragment_shadow_position, float depth_bias)
 {
@@ -251,7 +290,7 @@ float sample_percentage_closer_PCF_5x5_block_predicated(float3 fragment_shadow_p
 
 	return color;
 }
-
+#endif
 
 // #define DEBUG_CLIP
 

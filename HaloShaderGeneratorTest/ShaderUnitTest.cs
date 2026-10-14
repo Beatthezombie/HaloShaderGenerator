@@ -16,40 +16,6 @@ namespace HaloShaderGenerator
     {
         public ShaderUnitTest(string referencePath) : base(referencePath, new ShaderGenerator(), ShaderType.Shader) { }
 
-        public override string GeneratePixelShader(ShaderStage stage, List<int> shaderOptions)
-        {
-            var gen = new TemplateGenerator.TemplateGenerator
-            {
-                IsMs30 = true // disable for MS30
-            };
-            var bytecode = gen.GeneratePixelShader(Type, stage, StaticOptionInfo.OptionIndicesToOptionInfo(Type, shaderOptions), false).Bytecode;
-            return D3DCompiler.Disassemble(bytecode);
-        }
-
-        public override string GenerateSharedPixelShader(ShaderStage stage, int methodIndex, int optionIndex)
-        {
-            var gen = new TemplateGenerator.TemplateGenerator
-            {
-                IsMs30 = true // disable for MS30
-            };
-            var bytecode = gen.GeneratePixelShader(Type, stage, new List<OptionInfo>() { StaticOptionInfo.GetOptionInfo(Type, methodIndex, optionIndex) }, false).Bytecode;
-            return D3DCompiler.Disassemble(bytecode);
-        }
-
-        public override string GenerateVertexShader(VertexType vertex, ShaderStage stage)
-        {
-            var gen = new ShaderGenerator();
-            var bytecode = gen.GenerateVertexShader(vertex, stage).Bytecode;
-            return D3DCompiler.Disassemble(bytecode);
-        }
-
-        public override string GenerateSharedVertexShader(VertexType vertex, ShaderStage stage)
-        {
-            var gen = new ShaderGenerator();
-            var bytecode = gen.GenerateSharedVertexShader(vertex, stage).Bytecode;
-            return D3DCompiler.Disassemble(bytecode);
-        }
-
         public override string GenerateExplicitPixelShader(ExplicitShader explicitShader, ShaderStage entry)
         {
             throw new System.NotImplementedException();
@@ -209,7 +175,8 @@ namespace HaloShaderGenerator
                 {
                     if (generatedDissassembly[i] != referenceDissasembly[i])
                     {
-                        mismatched = $"Line {line}: {generatedDissassembly.Substring(i, 128)}";
+                        int length = Math.Min(128, generatedDissassembly.Length - i);
+                        mismatched = $"Line {line}: {generatedDissassembly.Substring(i, length)}";
                         break;
                     }
 
@@ -863,26 +830,26 @@ namespace HaloShaderGenerator
         private bool TestShaderVertexShaderTaskBody(VertexType vertex, List<ShaderStage> stages)
         {
             bool success = true;
-            if (!ReferenceGenerator.IsVertexFormatSupported(vertex))
-                return false;
 
-            foreach (var stage in stages)
+            if (ReferenceGenerator.IsVertexFormatSupported(vertex))
             {
-                if (ReferenceGenerator.IsEntryPointSupported(stage) && ReferenceGenerator.IsVertexShaderShared(stage))
+                foreach (var stage in stages)
                 {
-                    string filePath = GetTestSharedVertexShader(vertex, stage);
-                    var file = new FileInfo(filePath);
-
-                    if (file.Exists == false)
+                    if (ReferenceGenerator.IsEntryPointSupported(stage) && ReferenceGenerator.IsVertexShaderShared(stage))
                     {
-                        Console.WriteLine($"No reference shader for {stage.ToString().ToLower()} vertex format {vertex.ToString().ToLower()}");
-                        success = false;
-                        continue;
-                    }
+                        string filePath = GetTestSharedVertexShader(vertex, stage);
+                        var file = new FileInfo(filePath);
 
-                    bool equal = CompareShaders(GenerateSharedVertexShader(vertex, stage), filePath, "vs_3_0", out bool usesD3DX, out string mismatched);
-                    success &= equal;
-                    DisplayVertexShaderTestResults(equal, vertex, stage, usesD3DX, mismatched);
+                        if (file.Exists == false)
+                        {
+                            Console.WriteLine($"No reference shader for {stage.ToString().ToLower()} vertex format {vertex.ToString().ToLower()}");
+                            continue;
+                        }
+
+                        bool equal = CompareShaders(GenerateSharedVertexShader(vertex, stage), filePath, "vs_3_0", out bool usesD3DX, out string mismatched);
+                        success &= equal;
+                        DisplayVertexShaderTestResults(equal, vertex, stage, usesD3DX, mismatched);
+                    }
                 }
             }
 
@@ -924,13 +891,50 @@ namespace HaloShaderGenerator
             return success;
         }
 
-        public abstract string GeneratePixelShader(ShaderStage stage, List<int> shaderOptions);
+        public virtual string GeneratePixelShader(ShaderStage stage, List<int> shaderOptions)
+        {
+            var gen = new TemplateGenerator.TemplateGenerator
+            {
+                IsMs30 = true // disable for MS30
+            };
+            var bytecode = gen.GeneratePixelShader(Type, stage, StaticOptionInfo.OptionIndicesToOptionInfo(Type, shaderOptions), false).Bytecode;
+            return D3DCompiler.Disassemble(bytecode);
+        }
 
-        public abstract string GenerateSharedPixelShader(ShaderStage stage, int methodIndex, int optionIndex);
+        public virtual string GenerateSharedPixelShader(ShaderStage stage, int methodIndex, int optionIndex)
+        {
+            var gen = new TemplateGenerator.TemplateGenerator
+            {
+                IsMs30 = true // disable for MS30
+            };
+            var bytecode = gen.GeneratePixelShader(Type, stage, new List<OptionInfo>() { StaticOptionInfo.GetOptionInfo(Type, methodIndex, optionIndex) }, false).Bytecode;
+            return D3DCompiler.Disassemble(bytecode);
+        }
 
-        public abstract string GenerateVertexShader(VertexType vertex, ShaderStage stage);
+        public virtual string GenerateVertexShader(VertexType vertex, ShaderStage stage)
+        {
+            var gen = new TemplateGenerator.TemplateGenerator
+            {
+                IsMs30 = true // disable for MS30
+            };
+            var bytecode = gen.GenerateVertexShader(Type, stage, vertex, StaticOptionInfo.GetAutoMacroDefinitions(Type), false).Bytecode;
+            return D3DCompiler.Disassemble(bytecode);
+        }
 
-        public abstract string GenerateSharedVertexShader(VertexType vertex, ShaderStage stage);
+        public virtual string GenerateSharedVertexShader(VertexType vertex, ShaderStage stage)
+        {
+            var gen = new TemplateGenerator.TemplateGenerator
+            {
+                IsMs30 = true // disable for MS30
+            };
+
+            // hack: we need macros defined, use 0 for all options
+            List<int> options = [.. new int[StaticOptionInfo.GetCategoryCount(Type)]];
+            List<OptionInfo> optionInfos = StaticOptionInfo.OptionIndicesToOptionInfo(Type, options);
+
+            var bytecode = gen.GenerateVertexShader(Type, stage, vertex, optionInfos, false).Bytecode;
+            return D3DCompiler.Disassemble(bytecode);
+        }
 
         public abstract string GenerateExplicitPixelShader(ExplicitShader explicitShader, ShaderStage entry);
 

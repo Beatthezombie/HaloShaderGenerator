@@ -359,9 +359,11 @@ s_water_interpolators transform_vertex( s_water_render_vertex IN )
 	if ( TEST_CATEGORY_OPTION(global_shape, paint) )
 	{
 		float4 shape_control;
+#if !defined(BUILD_MS30)
 		if ( !TEST_CATEGORY_OPTION(reach_compatibility, disabled) )
 			shape_control= tex2Dlod(global_shape_texture, float4(transform_texcoord(IN.base_tex.xy, global_shape_texture_xform), 0, mipmap_level));
 		else
+#endif
 			shape_control= sample2Dlod(global_shape_texture, IN.base_tex.xy, mipmap_level);
 		height_scale_global= shape_control.x;
 		choppy_scale_global= shape_control.y;
@@ -435,6 +437,7 @@ s_water_interpolators transform_vertex( s_water_render_vertex IN )
 			//float3 displacement_aux= 0.0f;
 			
 			// restore displacement
+#if !defined(BUILD_MS30)
 			if ( !TEST_CATEGORY_OPTION(reach_compatibility, disabled) )
 			{
 				displacement= restore_displacement(
@@ -450,6 +453,7 @@ s_water_interpolators transform_vertex( s_water_render_vertex IN )
 									wave_height_aux);
 			}
 			else
+#endif
 			{
 				displacement= restore_displacement(
 									displacement,
@@ -469,11 +473,13 @@ s_water_interpolators transform_vertex( s_water_render_vertex IN )
 			float wave_scale_aux= wave_scale;	
 
 			// scale and accumulate waves	
+#if !defined(BUILD_MS30)
 			if ( !TEST_CATEGORY_OPTION(reach_compatibility, disabled) )
 			{
 				displacement= displacement + displacement_aux;
 			}
 			else
+#endif
 			{
 				displacement/= wave_scale;
 				displacement_aux/= wave_scale_aux;
@@ -486,7 +492,9 @@ s_water_interpolators transform_vertex( s_water_render_vertex IN )
 								choppiness_backward * choppy_scale_global, 
 								choppiness_side * choppy_scale_global);
 
+#if !defined(BUILD_MS30)
 			if ( TEST_CATEGORY_OPTION(reach_compatibility, disabled) )
+#endif
 			{
 				// convert procedure wave displacement from texture space to geometry space
 				displacement*= IN.local_info.x;	

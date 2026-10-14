@@ -1491,11 +1491,11 @@ void default_dynamic_light_vs(
 	tangent= vertex.tangent;
 	binormal= vertex.binormal;
 	// world space vector from vertex to eye/camera
-	fragment_to_camera_world= Camera_Position - vertex.position;
+	fragment_to_camera_world= Camera_Position - vertex.position.xyz;
 		
-	fragment_position_shadow= mul(float4(vertex.position, 1.0f), Shadow_Projection);		
+	fragment_position_shadow= mul(float4(vertex.position.xyz, 1.0f), Shadow_Projection);		
 	
-	compute_scattering(Camera_Position, vertex.position, extinction, inscatter);		
+	compute_scattering(Camera_Position, vertex.position.xyz, extinction, inscatter);		
 
 	//clip_distance = calc_dynamic_light_clip_distance(position);
 }

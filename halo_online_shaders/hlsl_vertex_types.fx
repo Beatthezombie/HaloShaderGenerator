@@ -39,8 +39,12 @@
 struct s_world_vertex 
 {
 #ifndef PC_CPU
+	#if defined(BUILD_MS30)
+	float4 position		:POSITION;
+	#else
 	float3 position		:POSITION;
-	float2 texcoord		:TEXCOORD0;
+	#endif
+	float2 texcoord		:TEXCOORD0; 
 	float3 normal		:NORMAL;
 	float3 tangent		:TANGENT;
 	float3 binormal		:BINORMAL;
@@ -57,7 +61,11 @@ typedef s_world_vertex s_flat_world_vertex;	// the normal/binormal/tangent are p
 struct s_rigid_vertex 
 {
 #ifndef PC_CPU
+	#if defined(BUILD_MS30)
+	float4 position		:POSITION;
+	#else
 	float3 position		:POSITION;
+	#endif
 	float2 texcoord		:TEXCOORD0; 
 	float3 normal		:NORMAL;
 	float3 tangent		:TANGENT;
@@ -75,7 +83,11 @@ typedef s_rigid_vertex s_flat_rigid_vertex;	// the normal/binormal/tangent are p
 struct s_skinned_vertex 
 {
 #ifndef PC_CPU
+	#if defined(BUILD_MS30)
+	float4 position		:POSITION;
+	#else
 	float3 position		:POSITION;
+	#endif
 	float2 texcoord		:TEXCOORD0;
 	float3 normal		:NORMAL;
 	float3 tangent		:TANGENT;

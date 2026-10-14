@@ -17,7 +17,9 @@
 
 #define k_alpha_test_shader_lighting_constant	c229
 
+#if !defined(BUILD_MS30)
 VERTEX_CONSTANT(float4, lighting, k_alpha_test_shader_lighting_constant);
+#endif
 
 VERTEX_CONSTANT(float4, Position_Compression_Scale, k_register_position_compression_scale);
 VERTEX_CONSTANT(float4, Position_Compression_Offset, k_register_position_compression_offset);

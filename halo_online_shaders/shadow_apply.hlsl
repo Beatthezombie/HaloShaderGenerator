@@ -48,11 +48,15 @@ LOCAL_SAMPLER_2D(normal_buffer, 2);
 
 
 #ifdef pc
-#ifdef APPLY_FIXES
+	#ifdef APPLY_FIXES
 #define pixel_size shadow_map_pixel_size		// shadow pixel size...  good thing we care about PC...
-#else
+	#else
+		#if defined(BUILD_MS30)
+#define pixel_size float2(1.0/1024.0f, 1.0/1024.0f)		// ###ctchou $TODO THIS NEEDS TO BE PASSED IN!!!
+		#else
 #define pixel_size float2(1.0/512.0f, 1.0/512.0f)		// ###ctchou $TODO THIS NEEDS TO BE PASSED IN!!!
-#endif
+		#endif
+	#endif
 #endif
 #include "texture.fx"
 

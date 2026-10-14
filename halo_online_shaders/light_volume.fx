@@ -206,6 +206,7 @@ float4 sample_diffuse(float2 texcoord)
 	{
 		return sample2D(base_map, texcoord);
 	}
+#if !defined(BUILD_MS30)
 	IF_CATEGORY_OPTION(albedo, circular)
 	{
 		float2	delta=		2 * texcoord - 1;
@@ -214,6 +215,7 @@ float4 sample_diffuse(float2 texcoord)
 		float	alpha=		pow(radius, falloff);
 		return	float4(alpha, alpha, alpha, 1.0f);
 	}
+#endif
 }
 
 //float compute_depth_fade(float2 screen_coords, float depth, float range)
@@ -261,6 +263,10 @@ s_light_volume_render_pixel_out default_ps(s_light_volume_interpolators INTERPOL
 // #else
 // 	float4 blended= float4(0.0f, 0.0f, 0.0f, 0.0f);
 // #endif
-	return CONVERT_TO_RENDER_TARGET_FOR_BLEND(blended, false, false, 0.0f);
+	return CONVERT_TO_RENDER_TARGET_FOR_BLEND(blended, false, false
+#if !defined(BUILD_MS30)
+	, 0.0f
+#endif
+	);
 }
 #endif	//#ifdef PIXEL_SHADER
